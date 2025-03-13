@@ -26,9 +26,40 @@ func ScheduleInterview(ctx context.Context, interview schema.Interview) (schema.
 	return result, nil
 }
 
-func GetInterviews(ctx context.Context, interviewID int) ([]schema.Interview, error) {
-	query := `SELECT * FROM interviews WHERE id=$1`
-	rows, err := config.DB.Query(ctx, query, interviewID)
+func GetSeekerInterviews(ctx context.Context, seekerID int) ([]schema.Interview, error) {
+	query := `
+		SELECT i.id, i.application_id, i.scheduled_date, i.interview_mode, i.status, 
+		       i.interviewer_name, i.interview_link 
+		FROM interviews i
+		JOIN applications a ON i.application_id = a.id
+		WHERE a.job_seeker_id = $1
+	`
+	rows, err := config.DB.Query(ctx, query, seekerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var interviews []schema.Interview
+	for rows.Next() {
+		var interview schema.Interview
+		err := rows.Scan(&interview.ID, &interview.ApplicationID, &interview.ScheduledDate, &interview.InterviewMode, &interview.Status, &interview.InterviewerName, &interview.InterviewLink)
+		if err != nil {
+			return nil, err
+		}
+		interviews = append(interviews, interview)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return interviews, nil
+}
+
+func GetInterviews(ctx context.Context, applicationID int) ([]schema.Interview, error) {
+	query := `SELECT * FROM interviews WHERE application_id=$1`
+	rows, err := config.DB.Query(ctx, query, applicationID)
 	if err != nil {
 		return nil, err
 	}

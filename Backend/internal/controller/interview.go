@@ -35,14 +35,30 @@ func ScheduleInterviewHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Interview scheduled successfully", "interview": result})
 }
 
-func GetInterviewHandler(c *gin.Context) {
-	interviewID, err := strconv.Atoi(c.Param("id"))
+func GetSeekerInterviewHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid interview ID"})
 		return
 	}
 
-	interviews, err := db.GetInterviews(context.Background(), interviewID)
+	interviews, err := db.GetSeekerInterviews(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve interviews"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"interviews": interviews})
+}
+
+func GetInterviewHandler(c *gin.Context) {
+	applicationID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid interview ID"})
+		return
+	}
+
+	interviews, err := db.GetInterviews(context.Background(), applicationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve interviews"})
 		return

@@ -46,9 +46,35 @@ func CreateApplication(ctx context.Context, application schema.Application) (sch
 }
 
 
-func GetApplications(ctx context.Context, applicationID int) ([]schema.Application, error) {
-	query := `SELECT * FROM applications WHERE id=$1`
-	rows, err := config.DB.Query(ctx, query, applicationID)
+func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.Application, error) {
+	query := `SELECT * FROM applications WHERE job_seeker_id=$1`
+	rows, err := config.DB.Query(ctx, query, jobSeekerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var applications []schema.Application
+	for rows.Next() {
+		var application schema.Application
+		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter)
+		if err != nil {
+			return nil, err
+		}
+		applications = append(applications, application)
+	}
+
+	// Check if no records were found
+	if len(applications) == 0 {
+		return nil, errors.New("no applications found")
+	}
+
+	return applications, nil
+}
+
+func GetJobApplications(ctx context.Context, jobID int) ([]schema.Application, error) {
+	query := `SELECT * FROM applications WHERE job_listing_id=$1`
+	rows, err := config.DB.Query(ctx, query, jobID)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,8 @@ func SetupRoutes(router *gin.Engine) {
 	applicationGroup := router.Group("/application")
 	{
 		applicationGroup.POST("/add_application", controller.CreateApplicationHandler)
-		applicationGroup.GET("/get_application/:id", controller.GetApplicationHandler)
+		applicationGroup.GET("/get_seeker_application/:id", controller.GetSeekerApplicationHandler)
+		applicationGroup.GET("/get_job_application/:id", controller.GetJobApplicationHandler)
 	}
 
 	// Group routes for interview
@@ -28,6 +29,7 @@ func SetupRoutes(router *gin.Engine) {
 	{
 		interviewGroup.POST("/schedule_interview", controller.ScheduleInterviewHandler)
 		interviewGroup.GET("/get_interview/:id", controller.GetInterviewHandler)
+		interviewGroup.GET("/get_seeker_interview/:id", controller.GetSeekerInterviewHandler)
 		interviewGroup.PATCH("/update_interview",controller.UpdateInterviewHandler)
 	}
 }

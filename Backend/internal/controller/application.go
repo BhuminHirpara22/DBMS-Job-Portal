@@ -37,14 +37,30 @@ func CreateApplicationHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Application created successfully", "application": result})
 }
 
-func GetApplicationHandler(c *gin.Context) {
-	applicationID, err := strconv.Atoi(c.Param("id"))
+func GetSeekerApplicationHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid application ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
 		return
 	}
 
-	applications, err := db.GetApplications(context.Background(), applicationID)
+	applications, err := db.GetSeekerApplications(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve applications"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"applications": applications})
+}
+
+func GetJobApplicationHandler(c *gin.Context) {
+	jobID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job listing ID"})
+		return
+	}
+
+	applications, err := db.GetJobApplications(context.Background(), jobID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve applications"})
 		return

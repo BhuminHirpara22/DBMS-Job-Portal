@@ -110,3 +110,53 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 		"application": updatedApplication,
 	})
 }
+
+func GetResultHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	applications, err := db.GetResults(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve results"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"applications": applications})
+}
+
+// GetSeekerApplicationCountHandler handles the request to get the count of a seeker's applications
+func GetSeekerApplicationCountHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("seeker_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	count, err := db.GetSeekerApplicationCount(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve application count"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"job_seeker_id": seekerID, "application_count": count})
+}
+
+
+func GetResultCountHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("seeker_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	count, err := db.GetResultCount(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve result count"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"job_seeker_id": seekerID, "result_count": count})
+}

@@ -83,3 +83,20 @@ func UpdateInterviewHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Interview updated successfully", "interview": result})
 }
+
+// GetSeekerInterviewCountHandler handles the request to get the count of a seeker's interviews
+func GetSeekerInterviewCountHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("seeker_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	count, err := db.GetSeekerInterviewCount(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve interview count"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"job_seeker_id": seekerID, "interview_count": count})
+}

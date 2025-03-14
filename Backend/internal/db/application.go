@@ -47,7 +47,7 @@ func CreateApplication(ctx context.Context, application schema.Application) (sch
 
 
 func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.Application, error) {
-	query := `SELECT * FROM applications WHERE job_seeker_id=$1`
+	query := `SELECT * FROM applications WHERE job_seeker_id=$1 AND application_status = 'Applied'`
 	rows, err := config.DB.Query(ctx, query, jobSeekerID)
 	if err != nil {
 		return nil, err
@@ -116,4 +116,50 @@ func UpdateApplicationStatus(ctx context.Context, applicationID int, status stri
 	return updatedApplication, nil
 }
 
+func GetResults(ctx context.Context, jobSeekerID int) ([]schema.Application, error) {
+	query := `SELECT * FROM applications WHERE job_seeker_id=$1 AND application_status IN ('Approved', 'Rejected')`
+	rows, err := config.DB.Query(ctx, query, jobSeekerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
+	var applications []schema.Application
+	for rows.Next() {
+		var application schema.Application
+		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter)
+		if err != nil {
+			return nil, err
+		}
+		applications = append(applications, application)
+	}
+
+	// Check if no records were found
+	if len(applications) == 0 {
+		return nil, errors.New("no applications found")
+	}
+
+	return applications, nil
+}
+
+// GetSeekerApplicationCount retrieves the count of applications for a given seeker
+func GetSeekerApplicationCount(ctx context.Context, seekerID int) (int, error) {
+	query := `SELECT COUNT(*) FROM applications WHERE job_seeker_id = $1 AND application_status = 'Applied'`
+	var count int
+	err := config.DB.QueryRow(ctx, query, seekerID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// GetSeekerApplicationCount retrieves the count of applications for a given seeker
+func GetResultCount(ctx context.Context, seekerID int) (int, error) {
+	query := `SELECT COUNT(*) FROM applications WHERE job_seeker_id = $1 AND application_status IN ('Approved', 'Rejected')`
+	var count int
+	err := config.DB.QueryRow(ctx, query, seekerID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

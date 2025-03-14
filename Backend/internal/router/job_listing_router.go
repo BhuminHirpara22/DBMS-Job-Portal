@@ -1,21 +1,13 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"Backend/internal/controller"
 	"Backend/internal/middleware" // Import middleware for authentication
 )
 
-// Home route
-func home(c *gin.Context) {
-	c.String(http.StatusOK, "Job Portal API is running")
-}
-
-// SetupRoutes defines the routes
-func SetupRoutes(router *gin.Engine) {
-	router.GET("/", home)
+// SetupRoutesJobListing defines the routes
+func SetupRoutesJobListing(router *gin.Engine) {
 
 	// Employer Routes (Restricted)
 	employerRoutes := router.Group("/employer")
@@ -44,11 +36,4 @@ func SetupRoutes(router *gin.Engine) {
 		publicRoutes.GET("/:id", controller.FetchJob)   // Anyone can view a job
 		publicRoutes.GET("/filter", controller.FilterJobs) // Anyone can filter jobs
 	}
-}
-
-// SetupRouter initializes the Gin router
-func SetupRouter() *gin.Engine {
-	router := gin.Default()
-	SetupRoutes(router)
-	return router
 }

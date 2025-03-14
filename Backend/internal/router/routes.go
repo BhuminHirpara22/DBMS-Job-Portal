@@ -22,6 +22,7 @@ func SetupRoutes(router *gin.Engine) {
 		applicationGroup.POST("/add_application", controller.CreateApplicationHandler)
 		applicationGroup.GET("/get_seeker_application/:id", controller.GetSeekerApplicationHandler)
 		applicationGroup.GET("/get_job_application/:id", controller.GetJobApplicationHandler)
+		applicationGroup.PATCH("/add_result/:id",controller.UpdateApplicationStatusHandler)
 	}
 
 	// Group routes for interview

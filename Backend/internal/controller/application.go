@@ -68,3 +68,45 @@ func GetJobApplicationHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"applications": applications})
 }
+
+func UpdateApplicationStatusHandler(c *gin.Context) {
+	// Parse application ID from URL parameter
+	applicationID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid application ID"})
+		return
+	}
+
+	// Parse request body for new status
+	var requestBody struct {
+		Status string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	// Validate status
+	if requestBody.Status != "Approved" && requestBody.Status != "Rejected" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Allowed values: 'Approved' or 'Rejected'"})
+		return
+	}
+
+	// Update application status in the database and return updated application
+	updatedApplication, err := db.UpdateApplicationStatus(context.Background(), applicationID, requestBody.Status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update application status"})
+		return
+	}
+
+	err = db.DeleteInterview(context.Background(), applicationID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete interview"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Application status updated successfully",
+		"application": updatedApplication,
+	})
+}

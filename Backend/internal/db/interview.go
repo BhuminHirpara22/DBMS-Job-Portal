@@ -91,3 +91,9 @@ func UpdateInterview(ctx context.Context, interview schema.Interview) (schema.In
 	}
 	return result, nil
 }
+
+func DeleteInterview(ctx context.Context, applicationID int) error {
+	query := `DELETE FROM interviews WHERE application_id = $1`
+	_, err := config.DB.Exec(ctx, query, applicationID)
+	return err
+}

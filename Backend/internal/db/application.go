@@ -46,18 +46,27 @@ func CreateApplication(ctx context.Context, application schema.Application) (sch
 }
 
 
-func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.Application, error) {
-	query := `SELECT * FROM applications WHERE job_seeker_id=$1 AND application_status = 'Applied'`
+func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJob, error) {
+	query := `
+		SELECT a.id, a.job_seeker_id, a.job_listing_id, a.application_status, a.applied_date, 
+		       a.cover_letter, j.job_title, j.location, j.min_salary, j.max_salary, c.company_name
+		FROM applications a
+		JOIN job_listings j ON a.job_listing_id = j.id
+		JOIN employers e ON j.employer_id = e.id
+		JOIN company c ON e.companyid = c.id
+		WHERE a.job_seeker_id=$1 AND a.application_status = 'Applied'
+	`
+
 	rows, err := config.DB.Query(ctx, query, jobSeekerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var applications []schema.Application
+	var applications []schema.ApplicationandJob
 	for rows.Next() {
-		var application schema.Application
-		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter)
+		var application schema.ApplicationandJob
+		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter, &application.JobTitle, &application.Location, &application.MinSalary, &application.MaxSalary, &application.Company)
 		if err != nil {
 			return nil, err
 		}
@@ -116,18 +125,27 @@ func UpdateApplicationStatus(ctx context.Context, applicationID int, status stri
 	return updatedApplication, nil
 }
 
-func GetResults(ctx context.Context, jobSeekerID int) ([]schema.Application, error) {
-	query := `SELECT * FROM applications WHERE job_seeker_id=$1 AND application_status IN ('Approved', 'Rejected')`
+func GetResults(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJob, error) {
+	query := `
+		SELECT a.id, a.job_seeker_id, a.job_listing_id, a.application_status, a.applied_date, 
+		       a.cover_letter, j.job_title, j.location, j.min_salary, j.max_salary, c.company_name
+		FROM applications a
+		JOIN job_listings j ON a.job_listing_id = j.id
+		JOIN employers e ON j.employer_id = e.id
+		JOIN company c ON e.companyid = c.id
+		WHERE a.job_seeker_id=$1 AND a.application_status = 'Applied'
+	`
+
 	rows, err := config.DB.Query(ctx, query, jobSeekerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var applications []schema.Application
+	var applications []schema.ApplicationandJob
 	for rows.Next() {
-		var application schema.Application
-		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter)
+		var application schema.ApplicationandJob
+		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter, &application.JobTitle, &application.Location, &application.MinSalary, &application.MaxSalary, &application.Company)
 		if err != nil {
 			return nil, err
 		}

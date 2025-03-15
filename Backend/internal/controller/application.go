@@ -129,7 +129,7 @@ func GetResultHandler(c *gin.Context) {
 
 // GetSeekerApplicationCountHandler handles the request to get the count of a seeker's applications
 func GetSeekerApplicationCountHandler(c *gin.Context) {
-	seekerID, err := strconv.Atoi(c.Param("seeker_id"))
+	seekerID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
 		return
@@ -146,7 +146,7 @@ func GetSeekerApplicationCountHandler(c *gin.Context) {
 
 
 func GetResultCountHandler(c *gin.Context) {
-	seekerID, err := strconv.Atoi(c.Param("seeker_id"))
+	seekerID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
 		return

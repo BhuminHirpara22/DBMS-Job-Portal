@@ -12,6 +12,9 @@ CREATE TABLE job_seekers (
     phone_number VARCHAR(10),
     linkedin_url VARCHAR(255),
     education TEXT -- from education table
+    applicatiom_count INT DEFAULT 0,
+    interview_count INT DEFAULT 0,
+    result_count INT DEFAULT 0
 );
 
 -- Companies Table

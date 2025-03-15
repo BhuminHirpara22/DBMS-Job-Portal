@@ -1,9 +1,9 @@
 package db
 
 import (
-	"context"
 	"Backend/config"
 	"Backend/internal/schema"
+	"context"
 	"errors"
 )
 
@@ -162,7 +162,7 @@ func GetResults(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJo
 
 // GetSeekerApplicationCount retrieves the count of applications for a given seeker
 func GetSeekerApplicationCount(ctx context.Context, seekerID int) (int, error) {
-	query := `SELECT COUNT(*) FROM applications WHERE job_seeker_id = $1 AND application_status = 'Applied'`
+	query := `SELECT application_count FROM job_seekers WHERE id=$1`
 	var count int
 	err := config.DB.QueryRow(ctx, query, seekerID).Scan(&count)
 	if err != nil {
@@ -173,7 +173,7 @@ func GetSeekerApplicationCount(ctx context.Context, seekerID int) (int, error) {
 
 // GetSeekerApplicationCount retrieves the count of applications for a given seeker
 func GetResultCount(ctx context.Context, seekerID int) (int, error) {
-	query := `SELECT COUNT(*) FROM applications WHERE job_seeker_id = $1 AND application_status IN ('Approved', 'Rejected')`
+	query := `SELECT result_count FROM job_seekers WHERE id=$1`
 	var count int
 	err := config.DB.QueryRow(ctx, query, seekerID).Scan(&count)
 	if err != nil {

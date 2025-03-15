@@ -101,10 +101,9 @@ func DeleteInterview(ctx context.Context, applicationID int) error {
 // GetSeekerInterviewCount retrieves the count of interviews for a given seeker
 func GetSeekerInterviewCount(ctx context.Context, seekerID int) (int, error) {
 	query := `
-		SELECT COUNT(*) 
-		FROM interviews i
-		JOIN applications a ON i.application_id = a.id
-		WHERE a.job_seeker_id = $1
+		SELECT interview_count
+		FROM job_seekers
+		WHERE id = $1
 	`
 	var count int
 	err := config.DB.QueryRow(ctx, query, seekerID).Scan(&count)

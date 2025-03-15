@@ -86,7 +86,7 @@ func UpdateInterviewHandler(c *gin.Context) {
 
 // GetSeekerInterviewCountHandler handles the request to get the count of a seeker's interviews
 func GetSeekerInterviewCountHandler(c *gin.Context) {
-	seekerID, err := strconv.Atoi(c.Param("seeker_id"))
+	seekerID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
 		return

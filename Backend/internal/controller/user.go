@@ -1,4 +1,4 @@
-package controllers
+package controller
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"Backend/config"
 	"Backend/internal/db"
 	"Backend/internal/schema"
 	"Backend/internal/helpers" // Ensure this package provides HashPassword, CheckPassword, GenerateJWT, etc.

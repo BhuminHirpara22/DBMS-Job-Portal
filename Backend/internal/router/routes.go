@@ -37,4 +37,14 @@ func SetupRoutes(router *gin.Engine) {
 		interviewGroup.PATCH("/update_interview",controller.UpdateInterviewHandler)
 		interviewGroup.GET("/get_interview_count/:id",controller.GetSeekerInterviewCountHandler)
 	}
+
+	// Group routes for user authentication and user profile management
+	userGroup := router.Group("/user")
+	{
+		userGroup.POST("/register/jobseeker", controller.RegisterJobSeeker)
+		userGroup.POST("/register/employer", controller.RegisterEmployer)
+		userGroup.POST("/login", controller.LoginHandler)
+		userGroup.PUT("/jobseeker/:id", controller.UpdateJobSeekerProfile)
+		userGroup.PUT("/employer/:id", controller.UpdateEmployerProfile)
+	}
 }

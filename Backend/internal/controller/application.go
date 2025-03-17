@@ -37,7 +37,9 @@ func CreateApplicationHandler(c *gin.Context) {
 
 	// Create a notification for the job seeker
 	message := fmt.Sprintf("Your application %d has been created Succesfully.",application.ID)
+	notificationID, err := db.GenerateNotificationID(context.Background())
 	notification := schema.Notification{
+		ID:       notificationID,
 		UserID:   application.JobSeekerID,
 		UserType: "job_seeker",
 		Message:  message,
@@ -124,7 +126,9 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 
 	// Create a notification for the job seeker
 	message := fmt.Sprintf("Your application %d has been %s",applicationID, requestBody.Status)
+	notificationID, err := db.GenerateNotificationID(context.Background())
 	notification := schema.Notification{
+		ID: 	  notificationID,
 		UserID:   updatedApplication.JobSeekerID,
 		UserType: "job_seeker",
 		Message:  message,

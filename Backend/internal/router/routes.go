@@ -49,4 +49,9 @@ func SetupRoutes(router *gin.Engine) {
 		userGroup.DELETE("/user/:id", controller.DeleteUser) 
 		userGroup.POST("/logout", controller.LogoutHandler)  
 	}
+
+	notificationGroup := router.Group("/notification")
+	{
+		notificationGroup.GET("/get_notifications/:id",controller.GetNotificationsHandler)
+	}
 }

@@ -37,7 +37,9 @@ func ScheduleInterviewHandler(c *gin.Context) {
 
 	// Create a notification for the job seeker
 	message := fmt.Sprintf("Your interview for application %d has been scheduled",application.ID)
+	notificationID, err := db.GenerateNotificationID(context.Background())
 	notification := schema.Notification{
+		ID: 		notificationID,
 		UserID:  	application.JobSeekerID,
 		UserType: "job_seeker",
 		Message:  message,

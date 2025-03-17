@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,22 @@ func ScheduleInterviewHandler(c *gin.Context) {
 		return
 	}
 
+	application, err := db.GetApplication(context.Background(), interview.ApplicationID)
+
+	// Create a notification for the job seeker
+	message := fmt.Sprintf("Your interview for application %d has been scheduled",application.ID)
+	notification := schema.Notification{
+		UserID:  	application.JobSeekerID,
+		UserType: "job_seeker",
+		Message:  message,
+		IsRead:   false,
+	}
+
+	err = db.StoreNotification(context.Background(), notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Interview scheduled successfully", "interview": result})
 }
 

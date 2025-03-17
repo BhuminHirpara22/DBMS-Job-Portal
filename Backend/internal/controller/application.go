@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,6 +32,21 @@ func CreateApplicationHandler(c *gin.Context) {
 	result, err := db.CreateApplication(context.Background(), application)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create application"})
+		return
+	}
+
+	// Create a notification for the job seeker
+	message := fmt.Sprintf("Your application %d has been created Succesfully.",application.ID)
+	notification := schema.Notification{
+		UserID:   application.JobSeekerID,
+		UserType: "job_seeker",
+		Message:  message,
+		IsRead:   false,
+	}
+
+	err = db.StoreNotification(context.Background(), notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
 		return
 	}
 
@@ -92,16 +108,32 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 		return
 	}
 
-	// Update application status in the database and return updated application
+	// Update application status in the database
 	updatedApplication, err := db.UpdateApplicationStatus(context.Background(), applicationID, requestBody.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update application status"})
 		return
 	}
 
+	// Delete the interview related to the application
 	err = db.DeleteInterview(context.Background(), applicationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete interview"})
+		return
+	}
+
+	// Create a notification for the job seeker
+	message := fmt.Sprintf("Your application %d has been %s",applicationID, requestBody.Status)
+	notification := schema.Notification{
+		UserID:   updatedApplication.JobSeekerID,
+		UserType: "job_seeker",
+		Message:  message,
+		IsRead:   false,
+	}
+
+	err = db.StoreNotification(context.Background(), notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
 		return
 	}
 
@@ -110,6 +142,7 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 		"application": updatedApplication,
 	})
 }
+
 
 func GetResultHandler(c *gin.Context) {
 	seekerID, err := strconv.Atoi(c.Param("id"))
@@ -143,7 +176,6 @@ func GetSeekerApplicationCountHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"job_seeker_id": seekerID, "application_count": count})
 }
-
 
 func GetResultCountHandler(c *gin.Context) {
 	seekerID, err := strconv.Atoi(c.Param("id"))

@@ -107,6 +107,28 @@ func GetJobApplications(ctx context.Context, jobID int) ([]schema.Application, e
 	return applications, nil
 }
 
+func GetApplication(ctx context.Context, applicationID int) (schema.Application, error) {
+	var app schema.Application
+
+	query := `SELECT id, job_seeker_id, job_listing_id, application_status, applied_date, cover_letter 
+			  FROM applications WHERE id = $1`
+
+	err := config.DB.QueryRow(ctx, query, applicationID).Scan(
+		&app.ID,
+		&app.JobSeekerID,
+		&app.JobListingID,
+		&app.ApplicationStatus,
+		&app.AppliedDate,
+		&app.CoverLetter,
+	)
+
+	if err != nil {
+		return schema.Application{}, err
+	}
+
+	return app, nil
+}
+
 func UpdateApplicationStatus(ctx context.Context, applicationID int, status string) (schema.Application, error) {
 	// Update the application status
 	query := `UPDATE applications SET application_status = $1 WHERE id = $2 RETURNING *`

@@ -168,3 +168,55 @@ func ValidateEmployerCredentials(ctx context.Context, email, password string) (s
 	
 	return employer, nil
 }
+
+// UpdateJobSeeker updates an existing job seeker record.
+func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) error {
+	query := `
+		UPDATE job_seekers 
+		SET first_name = $1,
+			last_name = $2,
+			email = $3,
+			password = $4,
+			location = $5,
+			profile_picture = $6,
+			phone_number = $7,
+			linkedin_url = $8
+		WHERE id = $9
+	`
+	_, err := config.DB.Exec(ctx, query,
+		jobSeeker.FirstName,
+		jobSeeker.LastName,
+		jobSeeker.Email,
+		jobSeeker.Password,
+		jobSeeker.Location,
+		jobSeeker.ProfilePicture,
+		jobSeeker.PhoneNumber,
+		jobSeeker.LinkedinURL,
+		jobSeeker.ID,
+	)
+	return err
+}
+
+// UpdateEmployer updates an existing employer record.
+func UpdateEmployer(ctx context.Context, employer schema.Employer) error {
+	query := `
+		UPDATE employers 
+		SET companyid = $1,
+			email = $2,
+			password = $3,
+			description = $4,
+			contact_person = $5,
+			contact_number = $6
+		WHERE id = $7
+	`
+	_, err := config.DB.Exec(ctx, query,
+		employer.CompanyID,
+		employer.Email,
+		employer.Password,
+		employer.Description,
+		employer.ContactPerson,
+		employer.ContactNumber,
+		employer.ID,
+	)
+	return err
+}

@@ -44,9 +44,10 @@ func SetupRoutes(router *gin.Engine) {
 		userGroup.POST("/register/jobseeker", controller.RegisterJobSeeker)
 		userGroup.POST("/register/employer", controller.RegisterEmployer)
 		userGroup.POST("/login", controller.LoginHandler)
-		userGroup.PUT("/jobseeker/:id", controller.UpdateJobSeekerProfile)
-		userGroup.PUT("/employer/:id", controller.UpdateEmployerProfile)
-		userGroup.DELETE("/user/:id", controller.DeleteUser) 
+		userGroup.PUT("/update_jobseeker/:id", controller.UpdateJobSeekerProfile)
+		userGroup.PUT("/update_employer/:id", controller.UpdateEmployerProfile)
+		userGroup.DELETE("/delete_jobseeker/:id", controller.DeleteJobSeeker) 
+		userGroup.DELETE("/delete_employer/:id", controller.DeleteEmployerHandler) 
 		userGroup.POST("/logout", controller.LogoutHandler)  
 	}
 

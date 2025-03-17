@@ -150,8 +150,7 @@ func LoginHandler(c *gin.Context) {
 // optionally hashes the new password, and updates the record in the database.
 func UpdateJobSeekerProfile(c *gin.Context) {
 	// Extract the job seeker ID from the URL parameter.
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID parameter"})
 		return
@@ -188,8 +187,7 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 // UpdateEmployerProfile handles updating an employer's profile.
 // It follows the same pattern as the job seeker update.
 func UpdateEmployerProfile(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID parameter"})
 		return
@@ -222,9 +220,24 @@ func UpdateEmployerProfile(c *gin.Context) {
 }
 
 // DeleteUser handles deleting a user (job seeker or employer).
-func DeleteUser(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+func DeleteJobSeeker(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = db.DeleteJobSeeker(context.Background(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
+func DeleteEmployerHandler(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
@@ -236,7 +249,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteUser(context.Background(), id, userType)
+	err = db.DeleteEmployer(context.Background(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -244,7 +257,6 @@ func DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
-
 // LogoutHandler simply invalidates the token client-side.
 func LogoutHandler(c *gin.Context) {
 	// Invalidate token logic (on frontend) 

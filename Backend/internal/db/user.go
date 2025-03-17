@@ -229,18 +229,20 @@ func UpdateEmployer(ctx context.Context, employer schema.Employer) error {
 	return err
 }
 
-// DeleteUser removes a job seeker or employer from the database.
-func DeleteUser(ctx context.Context, userID int, userType string) error {
+func DeleteJobSeeker(ctx context.Context, userID int) error {
 	var query string
 
-	if userType == "job_seeker" {
-		query = "DELETE FROM job_seekers WHERE id = $1"
-	} else if userType == "employer" {
-		query = "DELETE FROM employers WHERE id = $1"
-	} else {
-		return fmt.Errorf("invalid user type")
-	}
+	query = "DELETE FROM job_seekers WHERE id = $1"
 
-	_, err := DB.ExecContext(ctx, query, userID)
+	_, err := config.DB.Exec(ctx, query, userID)
+	return err
+}
+
+func DeleteEmployer(ctx context.Context, userID int) error {
+	var query string
+
+	query = "DELETE FROM employers WHERE id = $1"
+
+	_, err := config.DB.Exec(ctx, query, userID)
 	return err
 }

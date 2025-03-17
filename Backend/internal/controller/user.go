@@ -220,3 +220,33 @@ func UpdateEmployerProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Employer profile updated successfully"})
 }
+
+// DeleteUser handles deleting a user (job seeker or employer).
+func DeleteUser(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	userType := c.Query("type") // Expecting "job_seeker" or "employer"
+	if userType != "job_seeker" && userType != "employer" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user type"})
+		return
+	}
+
+	err = db.DeleteUser(context.Background(), id, userType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
+// LogoutHandler simply invalidates the token client-side.
+func LogoutHandler(c *gin.Context) {
+	// Invalidate token logic (on frontend) 
+	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+}

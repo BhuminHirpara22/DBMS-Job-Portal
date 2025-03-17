@@ -10,10 +10,14 @@ import (
 // RegisterJobSeeker registers a new job seeker
 func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, error) {
 	query := `
-		INSERT INTO job_seekers (first_name, last_name, email, password, location, profile_picture, phone_number, linkedin_url) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-		RETURNING id
-	`
+        INSERT INTO job_seekers (
+            id, first_name, last_name, email, password, location, profile_picture, phone_number, linkedin_url
+        ) VALUES (
+            (SELECT COALESCE(MAX(id), 0) + 1 FROM job_seekers),
+            $1, $2, $3, $4, $5, $6, $7, $8
+        )
+        RETURNING id
+    `
 	var id int
 	err := config.DB.QueryRow(ctx, query, 
 		jobSeeker.FirstName, 
@@ -35,10 +39,14 @@ func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, er
 // RegisterEmployer registers a new employer
 func RegisterEmployer(ctx context.Context, employer schema.Employer) (int, error) {
 	query := `
-		INSERT INTO employers (companyid, email, password, description, contact_person, contact_number) 
-		VALUES ($1, $2, $3, $4, $5, $6) 
-		RETURNING id
-	`
+        INSERT INTO employers (
+            id, companyid, email, password, description, contact_person, contact_number
+        ) VALUES (
+            (SELECT COALESCE(MAX(id), 0) + 1 FROM employers),
+            $1, $2, $3, $4, $5, $6
+        )
+        RETURNING id
+    `
 	var id int
 	err := config.DB.QueryRow(ctx, query, 
 		employer.CompanyID, 

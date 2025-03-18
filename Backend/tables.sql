@@ -435,7 +435,7 @@ CREATE TRIGGER trigger_prevent_duplicate_jobs
 BEFORE INSERT ON job_listings
 FOR EACH ROW
 EXECUTE FUNCTION prevent_duplicate_jobs();
-
+-
 
 -- Function to delete old duplicate job postings before inserting a new one
 CREATE OR REPLACE FUNCTION delete_old_duplicate_jobs() RETURNS TRIGGER AS $$

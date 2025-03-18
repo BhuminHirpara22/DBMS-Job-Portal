@@ -29,13 +29,10 @@ type Employer struct {
 type LoginRequest struct {
     Email    string `json:"email" binding:"required,email"`
     Password string `json:"password" binding:"required"`
-    UserType string `json:"user_type" binding:"required"` 
 }
 
 type LoginResponse struct {
-    Token     string `json:"token"`
     UserID    int    `json:"user_id"`
-    UserType  string `json:"user_type"`
     FirstName string `json:"first_name,omitempty"` 
     Email     string `json:"email"`
 }

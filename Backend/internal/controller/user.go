@@ -78,64 +78,65 @@ func RegisterEmployer(c *gin.Context) {
 // LoginHandler handles login requests for both job seekers and employers.
 // It validates credentials, checks the password using helper functions,
 // generates a JWT token on success, and sends back the login response.
-func LoginHandler(c *gin.Context) {
+func SeekerLoginHandler(c *gin.Context) {
 	var loginReq schema.LoginRequest
 	if err := c.ShouldBindJSON(&loginReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var token string
 	var userID int
 	var firstName string
 
-	// Determine user type from the login request.
-	switch loginReq.UserType {
-	case "job_seeker":
-		// Validate job seeker credentials from the DB.
-		jobSeeker, err := db.ValidateJobSeekerCredentials(context.Background(), loginReq.Email, loginReq.Password)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-			return
-		}
-		// Verify the provided password matches the stored hash.
-		if !helpers.CheckPassword(loginReq.Password, jobSeeker.Password) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-			return
-		}
-		userID = jobSeeker.ID
-		firstName = jobSeeker.FirstName
-
-	case "employer":
-		// Validate employer credentials.
-		employer, err := db.ValidateEmployerCredentials(context.Background(), loginReq.Email, loginReq.Password)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-			return
-		}
-		if !helpers.CheckPassword(loginReq.Password, employer.Password) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-			return
-		}
-		userID = employer.ID
-
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user type"})
-		return
-	}
-
-	// Generate a JWT token to be used for authenticated requests.
-	token, err := helpers.GenerateJWT(userID, loginReq.UserType)
+	// Validate job seeker credentials from the DB.
+	jobSeeker, err := db.ValidateJobSeekerCredentials(context.Background(), loginReq.Email, loginReq.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
+	// Verify the provided password matches the stored hash.
+	if !helpers.CheckPassword(loginReq.Password, jobSeeker.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+	userID = jobSeeker.ID
+	firstName = jobSeeker.FirstName
+
 
 	// Return the login response with token and user details.
 	c.JSON(http.StatusOK, schema.LoginResponse{
-		Token:     token,
 		UserID:    userID,
-		UserType:  loginReq.UserType,
+		FirstName: firstName,
+		Email:     loginReq.Email,
+	})
+}
+
+func EmployerLoginHandler(c *gin.Context) {
+	var loginReq schema.LoginRequest
+	if err := c.ShouldBindJSON(&loginReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var userID int
+	var firstName string
+
+	// Validate employer credentials.
+	employer, err := db.ValidateEmployerCredentials(context.Background(), loginReq.Email, loginReq.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+	if !helpers.CheckPassword(loginReq.Password, employer.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+	userID = employer.ID
+
+
+	// Return the login response with token and user details.
+	c.JSON(http.StatusOK, schema.LoginResponse{
+		UserID:    userID,
 		FirstName: firstName,
 		Email:     loginReq.Email,
 	})

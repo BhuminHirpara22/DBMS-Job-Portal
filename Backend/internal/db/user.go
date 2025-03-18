@@ -7,14 +7,13 @@ import (
 	"errors"
 )
 
-// RegisterJobSeeker registers a new job seeker
 func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, error) {
 	query := `
         INSERT INTO job_seekers (
-            id, first_name, last_name, email, password, location, profile_picture, phone_number, linkedin_url
+            id, first_name, last_name, email, password, resume, experience, location, profile_picture, phone_number, linkedin_url, education, application_count, interview_count, result_count
         ) VALUES (
             (SELECT COALESCE(MAX(id), 0) + 1 FROM job_seekers),
-            $1, $2, $3, $4, $5, $6, $7, $8
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, 0, 0
         )
         RETURNING id
     `
@@ -24,10 +23,13 @@ func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, er
 		jobSeeker.LastName, 
 		jobSeeker.Email, 
 		jobSeeker.Password, 
+		jobSeeker.Resume, 
+		jobSeeker.Experience, 
 		jobSeeker.Location, 
 		jobSeeker.ProfilePicture, 
 		jobSeeker.PhoneNumber, 
-		jobSeeker.LinkedinURL,
+		jobSeeker.LinkedinURL, 
+		jobSeeker.Education,
 	).Scan(&id)
 	
 	if err != nil {

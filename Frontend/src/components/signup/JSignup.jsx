@@ -25,7 +25,7 @@ export function JobSeekerSignup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = import.meta.env.VITE_API_URL + "/job-seeker/signup";
+    const url = import.meta.env.VITE_API_URL + "/user/register/jobseeker";
     try {
       const response = await axios.post(url, input);
       console.log(response.data);
@@ -104,7 +104,7 @@ export function JobSeekerSignup() {
                 {name.replace("_", " ")}
               </label>
               <input
-                type={name.includes("password") ? "password" : "text"}
+                type={name.toLowerCase().includes("password") ? "password" : "text"}
                 name={name}
                 value={input[name]}
                 onChange={handleChange}

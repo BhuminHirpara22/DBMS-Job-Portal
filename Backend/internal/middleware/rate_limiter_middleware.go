@@ -15,7 +15,7 @@ func RateLimiterMiddleware() gin.HandlerFunc {
 		clientIP := c.ClientIP()
 
 		if _, exists := rateLimiters[clientIP]; !exists {
-			rateLimiters[clientIP] = rate.NewLimiter(rate.Every(10*time.Minute/100), 5) // 100 requests per 10 min
+			rateLimiters[clientIP] = rate.NewLimiter(rate.Every(5*time.Minute/100), 5) // 100 requests per 10 min
 		}
 
 		if !rateLimiters[clientIP].Allow() {

@@ -22,7 +22,7 @@ export function EmployerSignup() {
   const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = import.meta.env.VITE_API_URL + "/employer/signup";
+    const url = import.meta.env.VITE_API_URL + "/user/register/employer";
     try {
       const response = await axios.post(url, input);
       console.log(response.data);

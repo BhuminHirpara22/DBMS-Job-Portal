@@ -1,30 +1,64 @@
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Layout from "./components/layout/Layout"; // ✅ Wrapper for Navbar & BottomNav
+import ProtectedRoute from "./components/ProtectedRoute";
 import { Home } from "./components/home/Home";
 import { Role } from "./components/home/Role";
-import { Login } from "./components/login/Login";
+import { LoginE } from "./components/login/LoginE";
+import { LoginJ } from "./components/login/LoginJ";
 import { JobSeekerSignup } from "./components/signup/JSignup";
 import { EmployerSignup } from "./components/signup/ESignup";
 import Mainpage from "./components/mainpage/mainpage";
-import NotFound from "./components/NotFound/notfound";
 import JobListings from "./components/jobListing/JobListings";
 import Apply from "./components/Apply/apply";
+import NotFound from "./components/NotFound/notfound";
+import Layout from "./components/layout/Layout"; // ✅ Wrap protected pages inside Layout
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />, // ✅ Wrap all routes inside Layout
+    element: <Home />,
+  },
+  {
+    path: "/role",
+    element: <Role />,
+  },
+  {
+    path: "/login/jobseeker",
+    element: <LoginJ />,
+  },
+  {
+    path: "/login/employer",
+    element: <LoginE />,
+  },
+  {
+    path: "/signup/jobseeker",
+    element: <JobSeekerSignup />,
+  },
+  {
+    path: "/signup/employer",
+    element: <EmployerSignup />,
+  },
+  {
+    path: "/",
+    element: <Layout />, // ✅ Only show Navbar & BottomNav after login
     children: [
-      { path: "/", element: <Home /> },
-      { path: "/role", element: <Role /> },
-      { path: "/login", element: <Login /> },
-      { path: "/signup/jobseeker", element: <JobSeekerSignup /> },
-      { path: "/signup/employer", element: <EmployerSignup /> },
-      { path: "/mainpage", element: <Mainpage /> },
-      { path: "/jobs", element: <JobListings /> },
-      { path: "/apply/:jobId", element: <Apply /> },
-      { path: "*", element: <NotFound /> }, // 404 Page
+      {
+        path: "/mainpage",
+        element: <ProtectedRoute component={Mainpage} />,
+      },
+      {
+        path: "/jobs",
+        element: <ProtectedRoute component={JobListings} />,
+      },
+      {
+        path: "/apply/:jobId",
+        element: <ProtectedRoute component={Apply} />,
+      },
     ],
+  },
+  {
+    path: "*",
+    element: <NotFound />,
   },
 ]);
 

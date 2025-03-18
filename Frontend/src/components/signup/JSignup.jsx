@@ -25,7 +25,7 @@ export function JobSeekerSignup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = "";
+    const url = import.meta.env.VITE_API_URL + "/job-seeker/signup";
     try {
       const response = await axios.post(url, input);
       console.log(response.data);

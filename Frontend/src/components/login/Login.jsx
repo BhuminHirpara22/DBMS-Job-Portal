@@ -14,7 +14,7 @@ export function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = "";
+    const url = import.meta.env.VITE_API_URL + "/login";
     try {
       const response = await axios.post(url, input);
       if (response.data.success) {

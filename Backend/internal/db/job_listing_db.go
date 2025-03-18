@@ -3,40 +3,34 @@ package db
 import (
 	"context"
 	"log"
-	"strconv"
+	// "strconv"
 	"strings"
-	"time"
-	"fmt"
+	// "time"
+	// "fmt"
 	"Backend/config"
 	"Backend/internal/schema"
 )
 
 // CreateJob inserts a new job listing and its requirements into the database
+// CreateJob inserts a new job listing using a stored procedure
 func CreateJob(job schema.JobListing, requirements []string) (int, error) {
 	db := config.GetDB()
 
-	// ✅ Insert Job Listing
-	jobQuery := `
-		INSERT INTO job_listings (employer_id, job_title, description, location, job_type, min_salary, max_salary, expiry_date, job_category)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
-	`
+	// ✅ Call Stored Procedure for Job Insertion
 	var jobID int
-	err := db.QueryRow(context.Background(), jobQuery, 
+	err := db.QueryRow(context.Background(), "SELECT create_job($1, $2, $3, $4, $5, $6, $7, $8, $9)", 
 		job.EmployerID, job.JobTitle, job.Description, job.Location, 
 		job.JobType, job.MinSalary, job.MaxSalary, job.ExpiryDate, job.JobCategory,
 	).Scan(&jobID)
+
 	if err != nil {
 		log.Println("[ERROR] Failed to insert job:", err)
 		return 0, err
 	}
 
-	// ✅ Insert Job Requirements
-	requirementQuery := `
-		INSERT INTO requirement (job_listing_id, name)
-		VALUES ($1, $2)
-	`
+	// ✅ Call Stored Procedure for Each Requirement
 	for _, req := range requirements {
-		_, err := db.Exec(context.Background(), requirementQuery, jobID, req)
+		_, err := db.Exec(context.Background(), "SELECT add_requirement($1, $2)", jobID, req)
 		if err != nil {
 			log.Printf("[ERROR] Failed to insert requirement (%s) for JobID=%d: %v\n", req, jobID, err)
 			return jobID, err // Job created but some requirements failed
@@ -47,13 +41,14 @@ func CreateJob(job schema.JobListing, requirements []string) (int, error) {
 	return jobID, nil
 }
 
+
 // FetchAllJobs retrieves all job listings with pagination
 func FetchAllJobs(limit, offset int) ([]schema.JobListing, error) {
 	db := config.GetDB()
-	query := "SELECT * FROM job_listings ORDER BY posted_date DESC LIMIT $1 OFFSET $2"
+	query := "SELECT * FROM fetch_open_jobs($1, $2)"
 	rows, err := db.Query(context.Background(), query, limit, offset)
 	if err != nil {
-		log.Println("Error fetching jobs:", err)
+		log.Println("[ERROR] FetchAllJobs - Error fetching jobs:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -61,36 +56,46 @@ func FetchAllJobs(limit, offset int) ([]schema.JobListing, error) {
 	var jobs []schema.JobListing
 	for rows.Next() {
 		var job schema.JobListing
-
 		err := rows.Scan(
 			&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location,
 			&job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate,
 			&job.ApplicantCount, &job.Status, &job.JobCategory,
 		)
 		if err != nil {
-			log.Println("Error scanning job:", err)
+			log.Println("[ERROR] FetchAllJobs - Error scanning job:", err)
 			continue
 		}
 		jobs = append(jobs, job)
 	}
 
+	log.Printf("[SUCCESS] FetchAllJobs - %d open jobs retrieved\n", len(jobs))
 	return jobs, nil
 }
 
 // FetchJob retrieves a specific job by ID
 func FetchJob(jobID int) (*schema.JobListing, error) {
 	db := config.GetDB()
-	query := "SELECT * FROM job_listings WHERE id = $1"
+	query := "SELECT * FROM fetch_open_job($1)"
 	row := db.QueryRow(context.Background(), query, jobID)
 
 	var job schema.JobListing
-	err := row.Scan(&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location, &job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate, &job.ApplicantCount, &job.Status, &job.JobCategory)
+	var requirements []string // ✅ Ensure this matches TEXT[] returned from SQL
+
+	err := row.Scan(&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location,
+		&job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate,
+		&job.ApplicantCount, &job.Status, &job.JobCategory, &requirements)
 	if err != nil {
-		log.Println("Error fetching job:", err)
+		log.Println("[ERROR] FetchJob - Error fetching job:", err)
 		return nil, err
 	}
+
+	// ✅ Assign requirements to JobListing struct
+	job.Requirements = requirements
+
+	log.Printf("[SUCCESS] FetchJob - Job ID %d retrieved\n", jobID)
 	return &job, nil
 }
+
 
 // FetchJobsByEmployer retrieves all jobs posted by a specific employer
 func FetchJobsByEmployer(employerID int) ([]schema.JobListing, error) {
@@ -182,46 +187,21 @@ func DeleteJob(jobID int) error {
 }
 
 // FilterJobs filters job listings based on provided criteria
-func FilterJobs(location, jobType string, minSalary, maxSalary float64) ([]schema.JobListing, error) {
+func FilterJobs(location, jobType string, minSalary, maxSalary float64, skills []string) ([]schema.JobListing, error) {
 	db := config.GetDB()
-	query := "SELECT * FROM job_listings WHERE 1=1"
 
-	var args []interface{}
-	argIndex := 1
-
-	if location != "" {
-		query += " AND LOWER(location) LIKE LOWER($" + strconv.Itoa(argIndex) + ")"
-		args = append(args, "%"+strings.ToLower(strings.TrimSpace(location))+"%")
-		argIndex++
+	// Convert Go slice to PostgreSQL array format {skill1,skill2,skill3}
+	var skillsArray interface{}
+	if len(skills) > 0 {
+		skillsArray = "{ " + strings.Join(skills, ", ") + " }"
+	} else {
+		skillsArray = nil
 	}
 
-	if jobType != "" {
-		query += " AND LOWER(job_type) LIKE LOWER($" + strconv.Itoa(argIndex) + ")"
-		args = append(args, "%"+strings.ToLower(strings.TrimSpace(jobType))+"%")
-		argIndex++
-	}
-
-	if minSalary > 0 {
-		query += " AND min_salary >= $" + strconv.Itoa(argIndex)
-		args = append(args, minSalary)
-		argIndex++
-	}
-
-	if maxSalary > 0 {
-		query += " AND max_salary <= $" + strconv.Itoa(argIndex)
-		args = append(args, maxSalary)
-		argIndex++
-	}
-
-	query += " ORDER BY posted_date DESC"
-
-	// **Debugging: Print SQL query and parameters**
-	log.Println("Executing Query:", query)
-	log.Println("Query Parameters:", args)
-
-	rows, err := db.Query(context.Background(), query, args...)
+	query := "SELECT * FROM filter_jobs($1, $2, $3, $4, $5)"
+	rows, err := db.Query(context.Background(), query, location, jobType, minSalary, maxSalary, skillsArray)
 	if err != nil {
-		log.Println("Error filtering jobs:", err)
+		log.Println("[ERROR] FilterJobs - Error filtering jobs:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -229,64 +209,36 @@ func FilterJobs(location, jobType string, minSalary, maxSalary float64) ([]schem
 	var jobs []schema.JobListing
 	for rows.Next() {
 		var job schema.JobListing
-		err := rows.Scan(&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location, &job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate, &job.ApplicantCount, &job.Status, &job.JobCategory)
+		err := rows.Scan(
+			&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location,
+			&job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate,
+			&job.ApplicantCount, &job.Status, &job.JobCategory,
+		)
 		if err != nil {
-			log.Println("Error scanning job:", err)
+			log.Println("[ERROR] FilterJobs - Error scanning job:", err)
 			continue
 		}
 		jobs = append(jobs, job)
 	}
+
+	log.Printf("[SUCCESS] FilterJobs - %d open jobs retrieved\n", len(jobs))
 	return jobs, nil
 }
 
-// ApplyJob allows a job seeker to apply for a job
+// ApplyJob allows a job seeker to apply for a job using a stored procedure
 func ApplyJob(jobSeekerID, jobListingID int, coverLetter string) (int, error) {
 	db := config.GetDB()
 
-	// ✅ Step 1: Check if the job seeker has already applied
-	var exists bool
-	checkQuery := `
-		SELECT EXISTS (
-			SELECT 1 FROM applications WHERE job_seeker_id = $1 AND job_listing_id = $2
-		)
-	`
-	err := db.QueryRow(context.Background(), checkQuery, jobSeekerID, jobListingID).Scan(&exists)
-	if err != nil {
-		log.Println("Error checking existing application:", err)
-		return 0, err
-	}
-
-	if exists {
-		log.Println("Job seeker has already applied for this job")
-		return 0, fmt.Errorf("you have already applied for this job")
-	}
-
-	// ✅ Step 2: Insert application if it doesn't exist
-	insertQuery := `
-		INSERT INTO applications (job_seeker_id, job_listing_id, application_status, applied_date, cover_letter)
-		VALUES ($1, $2, 'Applied', $3, $4) RETURNING id
-	`
-
-	appliedDate := time.Now()
 	var applicationID int
-	err = db.QueryRow(context.Background(), insertQuery, jobSeekerID, jobListingID, appliedDate, coverLetter).Scan(&applicationID)
+	err := db.QueryRow(context.Background(), "SELECT apply_for_job($1, $2, $3)", 
+		jobSeekerID, jobListingID, coverLetter,
+	).Scan(&applicationID)
+
 	if err != nil {
-		log.Println("Error applying for job:", err)
+		log.Println("[ERROR] Failed to apply for job:", err)
 		return 0, err
 	}
 
-	// ✅ Step 3: Update applicant count in `job_listings`
-	updateQuery := `
-		UPDATE job_listings
-		SET applicant_count = COALESCE(applicant_count, 0) + 1
-		WHERE id = $1
-	`
-	_, err = db.Exec(context.Background(), updateQuery, jobListingID)
-	if err != nil {
-		log.Println("Error updating applicant count:", err)
-		return 0, err
-	}
-
+	log.Printf("[SUCCESS] Job Application Submitted: JobSeekerID=%d, JobID=%d\n", jobSeekerID, jobListingID)
 	return applicationID, nil
 }
-

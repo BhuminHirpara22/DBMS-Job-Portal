@@ -5,6 +5,7 @@ import (
 	"Backend/internal/schema"
 	"context"
 	"errors"
+	"time"
 )
 
 func GenerateApplicationID(ctx context.Context) (int, error) {
@@ -81,31 +82,116 @@ func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.Appli
 	return applications, nil
 }
 
-func GetJobApplications(ctx context.Context, jobID int) ([]schema.Application, error) {
-	query := `SELECT * FROM applications WHERE job_listing_id=$1`
-	rows, err := config.DB.Query(ctx, query, jobID)
+func GetJobApplications(ctx context.Context, applicationID int) (schema.ApplicationDetails, error) {
+	var appDetails schema.ApplicationDetails
+
+	// Fetch basic application and job seeker details
+	query := `
+	SELECT 
+	    a.id AS application_id, 
+	    js.first_name, 
+	    js.last_name, 
+	    js.email, 
+	    js.phone_number, 
+	    js.resume,
+	    a.applied_date,
+	    a.cover_letter
+	FROM applications a
+	JOIN job_seekers js ON a.job_seeker_id = js.id
+	WHERE a.id = $1`
+
+	err := config.DB.QueryRow(ctx, query, applicationID).Scan(
+		&appDetails.ApplicationID, &appDetails.FirstName, &appDetails.LastName, &appDetails.Email,
+		&appDetails.PhoneNumber, &appDetails.Resume, &appDetails.AppliedDate, &appDetails.CoverLetter,
+	)
 	if err != nil {
-		return nil, err
+		return schema.ApplicationDetails{}, err
+	}
+
+	// Fetch education details
+	educationQuery := `
+	SELECT 
+	    education_level, 
+	    institution_name, 
+	    field_of_study, 
+	    start_year, 
+	    end_year, 
+	    grade
+	FROM education 
+	WHERE job_seeker_id = (
+		SELECT job_seeker_id FROM applications WHERE id = $1
+	)`
+
+	rows, err := config.DB.Query(ctx, educationQuery, applicationID)
+	if err != nil {
+		return schema.ApplicationDetails{}, err
 	}
 	defer rows.Close()
 
-	var applications []schema.Application
 	for rows.Next() {
-		var application schema.Application
-		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter)
-		if err != nil {
-			return nil, err
+		var edu schema.EducationDetails
+		if err := rows.Scan(&edu.Level, &edu.Institution, &edu.FieldOfStudy, &edu.StartYear, &edu.EndYear, &edu.Grade); err != nil {
+			return schema.ApplicationDetails{}, err
 		}
-		applications = append(applications, application)
+		appDetails.Education = append(appDetails.Education, edu)
 	}
 
-	// Check if no records were found
-	if len(applications) == 0 {
-		return nil, errors.New("no applications found")
+	// Fetch experience details
+	experienceQuery := `
+	SELECT 
+	    job_title, 
+	    company_name, 
+	    location, 
+	    start_date, 
+	    end_date
+	FROM experience 
+	WHERE job_seeker_id = (
+		SELECT job_seeker_id FROM applications WHERE id = $1
+	)`
+
+	expRows, err := config.DB.Query(ctx, experienceQuery, applicationID)
+	if err != nil {
+		return schema.ApplicationDetails{}, err
+	}
+	defer expRows.Close()
+
+	for expRows.Next() {
+		var exp schema.ExperienceDetails
+		var endDate *time.Time
+
+		if err := expRows.Scan(&exp.JobTitle, &exp.Company, &exp.Location, &exp.StartDate, &endDate); err != nil {
+			return schema.ApplicationDetails{}, err
+		}
+
+		exp.EndDate = endDate
+		appDetails.Experience = append(appDetails.Experience, exp)
 	}
 
-	return applications, nil
+	// Fetch skills
+	skillsQuery := `
+	SELECT skill_name 
+	FROM job_seeker_skills 
+	WHERE job_seeker_id = (
+		SELECT job_seeker_id FROM applications WHERE id = $1
+	)`
+
+	skillRows, err := config.DB.Query(ctx, skillsQuery, applicationID)
+	if err != nil {
+		return schema.ApplicationDetails{}, err
+	}
+	defer skillRows.Close()
+
+	for skillRows.Next() {
+		var skill string
+		if err := skillRows.Scan(&skill); err != nil {
+			return schema.ApplicationDetails{}, err
+		}
+		appDetails.Skills = append(appDetails.Skills, skill)
+	}
+
+	return appDetails, nil
 }
+
 
 func GetApplication(ctx context.Context, applicationID int) (schema.Application, error) {
 	var app schema.Application

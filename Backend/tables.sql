@@ -6,13 +6,11 @@ CREATE TABLE job_seekers (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     resume TEXT,
-    experience TEXT, -- from experience table
     location VARCHAR(255),
     profile_picture TEXT,
     phone_number VARCHAR(10),
     linkedin_url VARCHAR(255),
-    education TEXT -- from education table
-    applicatiom_count INT DEFAULT 0,
+    application_count INT DEFAULT 0,
     interview_count INT DEFAULT 0,
     result_count INT DEFAULT 0
 );

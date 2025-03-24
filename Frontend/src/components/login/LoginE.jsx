@@ -2,76 +2,138 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { setToken } from "../../../tokenUtils";
+import { FaUser, FaLock, FaArrowLeft, FaBuilding } from "react-icons/fa";
 
 export function LoginE() {
   const navigate = useNavigate();
   const [input, setInput] = useState({ email: "", password: "" });
   const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
+    setError(false); // Clear error when user types
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = `${import.meta.env.VITE_API_URL}/employer/login`; // ✅ Employer API Endpoint
+    setIsLoading(true);
+    setError(false);
+    
+    const url = `${import.meta.env.VITE_API_URL}/user/employer_login`;
     try {
       const response = await axios.post(url, input);
-      if (response.data.success) {
-        setToken(response.data.token);
-        navigate("/employer-dashboard"); // ✅ Redirect to Employer Dashboard
-      } else {
-        setError(true);
-        setInput({ ...input, password: "" });
+      if (response.status === 200) {
+        setToken(response.data.user_id, "employer");
+        navigate("/employer/dashboard");
       }
     } catch (e) {
       console.log(e);
       setError(true);
+      setInput({ ...input, password: "" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-      <div className="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-lg">
-        <h2 className="text-3xl text-white font-bold mb-6 text-center">
-          Employer Login
-        </h2>
-        {error && (
-          <p className="text-red-500 bg-red-100 text-center p-2 rounded-md mb-4">
-            ❌ Invalid Credentials. Try Again.
-          </p>
-        )}
-        <form onSubmit={handleSubmit} method="POST">
-          <div className="mb-4">
-            <label className="block text-gray-300 font-medium mb-2">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={input.email}
-              onChange={handleChange}
-              className="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-md"
-              placeholder="Enter your email"
-              required
-            />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-4">
+      <div className="w-full max-w-md">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="mb-6 text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
+        >
+          <FaArrowLeft /> Back to Home
+        </button>
+
+        {/* Login Card */}
+        <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700/50">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <FaBuilding className="text-4xl text-blue-500" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">Employer Login</h2>
+            <p className="text-gray-400">Sign in to manage your job postings</p>
           </div>
-          <div className="mb-4">
-            <label className="block text-gray-300 font-medium mb-2">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={input.password}
-              onChange={handleChange}
-              className="w-full p-3 bg-gray-700 text-white border border-gray-600 rounded-md"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-          <div className="mt-6">
-            <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-md">
-              LOGIN AS EMPLOYER
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
+              Invalid email or password. Please try again.
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Business Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className="text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  name="email"
+                  value={input.email}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  placeholder="Enter your business email"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  name="password"
+                  value={input.password}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                isLoading ? 'opacity-75 cursor-not-allowed' : ''
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-400 text-sm">
+              Don't have an account?{" "}
+              <button
+                onClick={() => navigate("/role")}
+                className="text-blue-400 hover:text-blue-300 transition-colors duration-300"
+              >
+                Register your company
+              </button>
+            </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

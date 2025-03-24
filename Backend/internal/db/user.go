@@ -1,64 +1,105 @@
 package db
 
 import (
-	"context"
 	"Backend/config"
 	"Backend/internal/schema"
+	"context"
 	"errors"
+	// "fmt"
 )
 
 func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, error) {
-	query := `
-        INSERT INTO job_seekers (
-            id, first_name, last_name, email, password, resume, experience, location, profile_picture, phone_number, linkedin_url, education, application_count, interview_count, result_count
-        ) VALUES (
-            (SELECT COALESCE(MAX(id), 0) + 1 FROM job_seekers),
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, 0, 0
-        )
-        RETURNING id
-    `
-	var id int
-	err := config.DB.QueryRow(ctx, query, 
-		jobSeeker.FirstName, 
-		jobSeeker.LastName, 
-		jobSeeker.Email, 
-		jobSeeker.Password, 
-		jobSeeker.Resume, 
-		jobSeeker.Experience, 
-		jobSeeker.Location, 
-		jobSeeker.ProfilePicture, 
-		jobSeeker.PhoneNumber, 
-		jobSeeker.LinkedinURL, 
-		jobSeeker.Education,
-	).Scan(&id)
-	
+	tx, err := config.DB.Begin(ctx) // Start a transaction
 	if err != nil {
 		return 0, err
 	}
-	return id, nil
+
+	var jobSeekerID int
+	//  Insert Job Seeker First
+	query := `
+        INSERT INTO job_seekers (
+            first_name, last_name, email, password, resume, location, profile_picture, phone_number, linkedin_url
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9
+        )
+        RETURNING id
+    `
+	err = tx.QueryRow(ctx, query,
+		jobSeeker.FirstName,
+		jobSeeker.LastName,
+		jobSeeker.Email,
+		jobSeeker.Password,
+		jobSeeker.Resume,
+		jobSeeker.Location,
+		jobSeeker.ProfilePicture,
+		jobSeeker.PhoneNumber,
+		jobSeeker.LinkedinURL,
+	).Scan(&jobSeekerID)
+
+	if err != nil {
+		tx.Rollback(ctx)
+		return 0, err
+	}
+
+	//  Insert Education (If provided)
+	if len(jobSeeker.Education) > 0 {
+		eduQuery := `
+			INSERT INTO education (job_seeker_id, education_level, institution_name, field_of_study, start_year, end_year, grade)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`
+		for _, edu := range jobSeeker.Education {
+			_, err := tx.Exec(ctx, eduQuery, jobSeekerID, edu.Level, edu.Institution, edu.FieldOfStudy, edu.StartYear, edu.EndYear, edu.Grade)
+			if err != nil {
+				tx.Rollback(ctx)
+				return 0, err
+			}
+		}
+	}
+
+	//  Insert Experience (If provided)
+	if len(jobSeeker.Experience) > 0 {
+		expQuery := `
+			INSERT INTO experience (job_seeker_id, job_title, company_name, location, start_date, end_date)
+			VALUES ($1, $2, $3, $4, $5, $6)
+		`
+		for _, exp := range jobSeeker.Experience {
+			_, err := tx.Exec(ctx, expQuery, jobSeekerID, exp.JobTitle, exp.CompanyName, exp.Location, exp.StartDate, exp.EndDate)
+			if err != nil {
+				tx.Rollback(ctx)
+				return 0, err
+			}
+		}
+	}
+
+	//  Commit the transaction
+	err = tx.Commit(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return jobSeekerID, nil
 }
 
 // RegisterEmployer registers a new employer
 func RegisterEmployer(ctx context.Context, employer schema.Employer) (int, error) {
 	query := `
         INSERT INTO employers (
-            id, companyid, email, password, description, contact_person, contact_number
+            companyid, email, password, description, contact_person, contact_number
         ) VALUES (
-            (SELECT COALESCE(MAX(id), 0) + 1 FROM employers),
             $1, $2, $3, $4, $5, $6
         )
         RETURNING id
     `
 	var id int
-	err := config.DB.QueryRow(ctx, query, 
-		employer.CompanyID, 
-		employer.Email, 
-		employer.Password, 
-		employer.Description, 
-		employer.ContactPerson, 
+	err := config.DB.QueryRow(ctx, query,
+		employer.CompanyID,
+		employer.Email,
+		employer.Password,
+		employer.Description,
+		employer.ContactPerson,
 		employer.ContactNumber,
 	).Scan(&id)
-	
+
 	if err != nil {
 		return 0, err
 	}
@@ -72,23 +113,23 @@ func GetJobSeekerByEmail(ctx context.Context, email string) (schema.JobSeeker, e
 		FROM job_seekers WHERE email = $1
 	`
 	var jobSeeker schema.JobSeeker
-	
+
 	err := config.DB.QueryRow(ctx, query, email).Scan(
-		&jobSeeker.ID, 
-		&jobSeeker.FirstName, 
-		&jobSeeker.LastName, 
-		&jobSeeker.Email, 
-		&jobSeeker.Password, 
-		&jobSeeker.Location, 
-		&jobSeeker.ProfilePicture, 
-		&jobSeeker.PhoneNumber, 
+		&jobSeeker.ID,
+		&jobSeeker.FirstName,
+		&jobSeeker.LastName,
+		&jobSeeker.Email,
+		&jobSeeker.Password,
+		&jobSeeker.Location,
+		&jobSeeker.ProfilePicture,
+		&jobSeeker.PhoneNumber,
 		&jobSeeker.LinkedinURL,
 	)
-	
+
 	if err != nil {
 		return schema.JobSeeker{}, err
 	}
-	
+
 	return jobSeeker, nil
 }
 
@@ -99,21 +140,21 @@ func GetEmployerByEmail(ctx context.Context, email string) (schema.Employer, err
 		FROM employers WHERE email = $1
 	`
 	var employer schema.Employer
-	
+
 	err := config.DB.QueryRow(ctx, query, email).Scan(
-		&employer.ID, 
-		&employer.CompanyID, 
-		&employer.Email, 
-		&employer.Password, 
-		&employer.Description, 
-		&employer.ContactPerson, 
+		&employer.ID,
+		&employer.CompanyID,
+		&employer.Email,
+		&employer.Password,
+		&employer.Description,
+		&employer.ContactPerson,
 		&employer.ContactNumber,
 	)
-	
+
 	if err != nil {
 		return schema.Employer{}, err
 	}
-	
+
 	return employer, nil
 }
 
@@ -124,28 +165,28 @@ func ValidateJobSeekerCredentials(ctx context.Context, email, password string) (
 		FROM job_seekers WHERE email = $1
 	`
 	var jobSeeker schema.JobSeeker
-	
+
 	err := config.DB.QueryRow(ctx, query, email).Scan(
-		&jobSeeker.ID, 
-		&jobSeeker.FirstName, 
-		&jobSeeker.LastName, 
-		&jobSeeker.Email, 
-		&jobSeeker.Password, 
-		&jobSeeker.Location, 
-		&jobSeeker.ProfilePicture, 
-		&jobSeeker.PhoneNumber, 
+		&jobSeeker.ID,
+		&jobSeeker.FirstName,
+		&jobSeeker.LastName,
+		&jobSeeker.Email,
+		&jobSeeker.Password,
+		&jobSeeker.Location,
+		&jobSeeker.ProfilePicture,
+		&jobSeeker.PhoneNumber,
 		&jobSeeker.LinkedinURL,
 	)
-	
+
 	if err != nil {
 		return schema.JobSeeker{}, errors.New("invalid email or password")
 	}
-	
+
 	// Check password match (You'll need to implement this in helpers)
 	// if !helpers.CheckPassword(password, jobSeeker.Password) {
 	//     return schema.JobSeeker{}, errors.New("invalid email or password")
 	// }
-	
+
 	return jobSeeker, nil
 }
 
@@ -156,26 +197,25 @@ func ValidateEmployerCredentials(ctx context.Context, email, password string) (s
 		FROM employers WHERE email = $1
 	`
 	var employer schema.Employer
-	
+
 	err := config.DB.QueryRow(ctx, query, email).Scan(
-		&employer.ID, 
-		&employer.CompanyID, 
-		&employer.Email, 
-		&employer.Password, 
-		&employer.Description, 
-		&employer.ContactPerson, 
+		&employer.ID,
+		&employer.CompanyID,
+		&employer.Email,
+		&employer.Password,
+		&employer.Description,
+		&employer.ContactPerson,
 		&employer.ContactNumber,
 	)
-	
 	if err != nil {
 		return schema.Employer{}, errors.New("invalid email or password")
 	}
-	
+
 	// Check password match (You'll need to implement this in helpers)
 	// if !helpers.CheckPassword(password, employer.Password) {
 	//     return schema.Employer{}, errors.New("invalid email or password")
 	// }
-	
+
 	return employer, nil
 }
 
@@ -232,19 +272,29 @@ func UpdateEmployer(ctx context.Context, employer schema.Employer) error {
 }
 
 func DeleteJobSeeker(ctx context.Context, userID int) error {
-	var query string
+	// var query string
 
-	query = "DELETE FROM job_seekers WHERE id = $1"
+	query := "DELETE FROM job_seekers WHERE id = $1"
 
 	_, err := config.DB.Exec(ctx, query, userID)
 	return err
 }
 
 func DeleteEmployer(ctx context.Context, userID int) error {
-	var query string
+	// var query string
 
-	query = "DELETE FROM employers WHERE id = $1"
+	query := "DELETE FROM employers WHERE id = $1"
 
 	_, err := config.DB.Exec(ctx, query, userID)
 	return err
+}
+
+func GetCompanyId(ctx context.Context, CompanyName string) (int, error) {
+	query := "SELECT id FROM company WHERE company_name = $1"
+	var companyID int
+	err := config.DB.QueryRow(ctx, query, CompanyName).Scan(&companyID)
+	if err != nil {
+		return 0, err
+	}
+	return companyID, nil
 }

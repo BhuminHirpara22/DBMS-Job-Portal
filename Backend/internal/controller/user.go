@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"Backend/internal/db"
 	"Backend/internal/schema"
 	"Backend/internal/helpers" // Ensure this package provides HashPassword, CheckPassword, GenerateJWT, etc.
+	"fmt"
 )
 
 // ------------------------------
@@ -47,22 +47,37 @@ func RegisterJobSeeker(c *gin.Context) {
 // RegisterEmployer handles employer registration.
 // It follows a similar process as job seeker registration.
 func RegisterEmployer(c *gin.Context) {
-	var newEmployer schema.Employer
+	var newEmployer schema.InputEmployer
+	
 	if err := c.ShouldBindJSON(&newEmployer); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	var employer schema.Employer
+	var err error
+	employer.Email=newEmployer.Email
+	employer.Password=newEmployer.Password
+	employer.ContactPerson=newEmployer.ContactPerson
+	employer.ContactNumber=newEmployer.ContactNumber
+	employer.Description=newEmployer.Description
+	employer.CompanyID, err =db.GetCompanyId(context.Background(),newEmployer.CompanyName)
+
+	
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Getting in company id"})
+		return
+	}
 
 	// Hash the provided password.
-	hashedPassword, err := helpers.HashPassword(newEmployer.Password)
+	hashedPassword, err := helpers.HashPassword(employer.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
 		return
 	}
-	newEmployer.Password = hashedPassword
+	employer.Password = hashedPassword
 
 	// Insert the new employer into the database.
-	id, err := db.RegisterEmployer(context.Background(), newEmployer)
+	id, err := db.RegisterEmployer(context.Background(), employer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -120,9 +135,10 @@ func EmployerLoginHandler(c *gin.Context) {
 
 	var userID int
 	var firstName string
-
+	fmt.Println("Employer login")
 	// Validate employer credentials.
 	employer, err := db.ValidateEmployerCredentials(context.Background(), loginReq.Email, loginReq.Password)
+
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return

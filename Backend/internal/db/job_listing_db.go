@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"log"
+
 	// "strconv"
 	"strings"
 	// "time"
@@ -16,10 +17,10 @@ import (
 func CreateJob(job schema.JobListing, requirements []string) (int, error) {
 	db := config.GetDB()
 
-	// ✅ Call Stored Procedure for Job Insertion
+	//  Call Stored Procedure for Job Insertion
 	var jobID int
-	err := db.QueryRow(context.Background(), "SELECT create_job($1, $2, $3, $4, $5, $6, $7, $8, $9)", 
-		job.EmployerID, job.JobTitle, job.Description, job.Location, 
+	err := db.QueryRow(context.Background(), "SELECT create_job($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		job.EmployerID, job.JobTitle, job.Description, job.Location,
 		job.JobType, job.MinSalary, job.MaxSalary, job.ExpiryDate, job.JobCategory,
 	).Scan(&jobID)
 
@@ -28,7 +29,7 @@ func CreateJob(job schema.JobListing, requirements []string) (int, error) {
 		return 0, err
 	}
 
-	// ✅ Call Stored Procedure for Each Requirement
+	//  Call Stored Procedure for Each Requirement
 	for _, req := range requirements {
 		_, err := db.Exec(context.Background(), "SELECT add_requirement($1, $2)", jobID, req)
 		if err != nil {
@@ -40,7 +41,6 @@ func CreateJob(job schema.JobListing, requirements []string) (int, error) {
 	log.Printf("[SUCCESS] Job Created with ID=%d and Requirements=%v\n", jobID, requirements)
 	return jobID, nil
 }
-
 
 // FetchAllJobs retrieves all job listings with pagination
 func FetchAllJobs(limit, offset int) ([]schema.JobListing, error) {
@@ -79,7 +79,7 @@ func FetchJob(jobID int) (*schema.JobListing, error) {
 	row := db.QueryRow(context.Background(), query, jobID)
 
 	var job schema.JobListing
-	var requirements []string // ✅ Ensure this matches TEXT[] returned from SQL
+	var requirements []string //  Ensure this matches TEXT[] returned from SQL
 
 	err := row.Scan(&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location,
 		&job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate,
@@ -89,13 +89,12 @@ func FetchJob(jobID int) (*schema.JobListing, error) {
 		return nil, err
 	}
 
-	// ✅ Assign requirements to JobListing struct
+	//  Assign requirements to JobListing struct
 	job.Requirements = requirements
 
 	log.Printf("[SUCCESS] FetchJob - Job ID %d retrieved\n", jobID)
 	return &job, nil
 }
-
 
 // FetchJobsByEmployer retrieves all jobs posted by a specific employer
 func FetchJobsByEmployer(employerID int) ([]schema.JobListing, error) {
@@ -112,7 +111,7 @@ func FetchJobsByEmployer(employerID int) ([]schema.JobListing, error) {
 	var jobs []schema.JobListing
 	for rows.Next() {
 		var job schema.JobListing
-	
+
 		err := rows.Scan(
 			&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location,
 			&job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate,
@@ -122,7 +121,7 @@ func FetchJobsByEmployer(employerID int) ([]schema.JobListing, error) {
 			log.Println("Error scanning job:", err)
 			continue
 		}
-	
+
 		jobs = append(jobs, job)
 	}
 
@@ -140,8 +139,8 @@ func UpdateJob(job schema.JobListing, requirements []string) error {
 		    min_salary = $5, max_salary = $6, expiry_date = $7, status = $8, job_category = $9
 		WHERE id = $10
 	`
-	_, err := db.Exec(context.Background(), query, 
-		job.JobTitle, job.Description, job.Location, job.JobType, 
+	_, err := db.Exec(context.Background(), query,
+		job.JobTitle, job.Description, job.Location, job.JobType,
 		job.MinSalary, job.MaxSalary, job.ExpiryDate, job.Status, job.JobCategory, job.ID,
 	)
 	if err != nil {
@@ -172,7 +171,6 @@ func UpdateJob(job schema.JobListing, requirements []string) error {
 	log.Printf("[SUCCESS] Job Updated: ID=%d with Requirements=%v\n", job.ID, requirements)
 	return nil
 }
-
 
 // DeleteJob removes a job listing
 func DeleteJob(jobID int) error {
@@ -230,7 +228,7 @@ func ApplyJob(jobSeekerID, jobListingID int, coverLetter string) (int, error) {
 	db := config.GetDB()
 
 	var applicationID int
-	err := db.QueryRow(context.Background(), "SELECT apply_for_job($1, $2, $3)", 
+	err := db.QueryRow(context.Background(), "SELECT apply_for_job($1, $2, $3)",
 		jobSeekerID, jobListingID, coverLetter,
 	).Scan(&applicationID)
 

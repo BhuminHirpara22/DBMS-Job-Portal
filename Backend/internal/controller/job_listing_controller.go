@@ -1,35 +1,38 @@
 package controller
 
 import (
+	"Backend/internal/db"
+	"Backend/internal/schema"
+
+	// "fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/gin-gonic/gin"
-	"Backend/internal/db"
-	"Backend/internal/schema"
 )
 
 // CreateJobController handles job creation with requirements
 func CreateJob(c *gin.Context) {
 	var jobInput schema.JobInput
 
-	// ✅ Bind JSON input
+	//  Bind JSON input
 	if err := c.ShouldBindJSON(&jobInput); err != nil {
 		log.Println("[ERROR] CreateJob - Invalid JSON input:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
 
-	// ✅ Validate employer ID
+	//  Validate employer ID
 	if jobInput.EmployerID <= 0 {
 		log.Println("[ERROR] CreateJob - Invalid employer ID:", jobInput.EmployerID)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employer ID"})
 		return
 	}
 
-	// ✅ Convert expiry_date to time.Time
+	//  Convert expiry_date to time.Time
 	expiryTime, err := time.Parse("2006-01-02", jobInput.ExpiryDate)
 	if err != nil {
 		log.Println("[ERROR] CreateJob - Invalid expiry_date format:", jobInput.ExpiryDate)
@@ -37,7 +40,7 @@ func CreateJob(c *gin.Context) {
 		return
 	}
 
-	// ✅ Prepare Job Struct
+	//  Prepare Job Struct
 	job := schema.JobListing{
 		EmployerID:  jobInput.EmployerID,
 		JobTitle:    jobInput.JobTitle,
@@ -50,7 +53,7 @@ func CreateJob(c *gin.Context) {
 		JobCategory: jobInput.JobCategory,
 	}
 
-	// ✅ Call DB function to create job with requirements
+	//  Call DB function to create job with requirements
 	jobID, err := db.CreateJob(job, jobInput.Requirements)
 	if err != nil {
 		log.Println("[ERROR] CreateJob - Failed to insert job:", err)
@@ -61,8 +64,6 @@ func CreateJob(c *gin.Context) {
 	log.Printf("[SUCCESS] CreateJob - Job ID=%d Created with Requirements=%v\n", jobID, jobInput.Requirements)
 	c.JSON(http.StatusCreated, gin.H{"job_id": jobID, "message": "Job created successfully"})
 }
-
-
 
 // FetchAllJobs retrieves all job listings with pagination
 func FetchAllJobs(c *gin.Context) {
@@ -139,7 +140,7 @@ func UpdateJob(c *gin.Context) {
 		return
 	}
 
-	// ✅ Convert expiry_date to time.Time
+	//  Convert expiry_date to time.Time
 	expiryTime, err := time.Parse("2006-01-02", jobInput.ExpiryDate)
 	if err != nil {
 		log.Println("[ERROR] Invalid expiry_date format:", err)
@@ -147,7 +148,7 @@ func UpdateJob(c *gin.Context) {
 		return
 	}
 
-	// ✅ Prepare Job Struct
+	//  Prepare Job Struct
 	job := schema.JobListing{
 		ID:          id,
 		JobTitle:    jobInput.JobTitle,
@@ -161,7 +162,7 @@ func UpdateJob(c *gin.Context) {
 		JobCategory: jobInput.JobCategory,
 	}
 
-	// ✅ Call DB function to update job with requirements
+	//  Call DB function to update job with requirements
 	if err := db.UpdateJob(job, jobInput.Requirements); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update job"})
 		return
@@ -170,7 +171,6 @@ func UpdateJob(c *gin.Context) {
 	log.Printf("[SUCCESS] Job Updated: ID=%d with Requirements=%v\n", job.ID, jobInput.Requirements)
 	c.JSON(http.StatusOK, gin.H{"message": "Job updated successfully"})
 }
-
 
 // DeleteJob removes a job listing
 func DeleteJob(c *gin.Context) {
@@ -192,7 +192,7 @@ func DeleteJob(c *gin.Context) {
 func FilterJobs(c *gin.Context) {
 	location := strings.TrimSpace(c.Query("location"))
 	jobType := strings.TrimSpace(c.Query("job_type"))
-	skills := c.QueryArray("skills") // ✅ Get multiple skills as an array
+	skills := c.QueryArray("skills") //  Get multiple skills as an array
 	minSalaryStr := c.Query("min_salary")
 	maxSalaryStr := c.Query("max_salary")
 
@@ -218,7 +218,7 @@ func FilterJobs(c *gin.Context) {
 		}
 	}
 
-	// ✅ Fetch filtered jobs from database, including skills filtering
+	//  Fetch filtered jobs from database, including skills filtering
 	jobs, err := db.FilterJobs(location, jobType, minSalary, maxSalary, skills)
 	if err != nil {
 		log.Println("[ERROR] FilterJobs - Failed to filter jobs:", err)
@@ -226,7 +226,7 @@ func FilterJobs(c *gin.Context) {
 		return
 	}
 
-	// ✅ If no jobs found, return empty array instead of null
+	//  If no jobs found, return empty array instead of null
 	if len(jobs) == 0 {
 		c.JSON(http.StatusOK, []interface{}{})
 		return
@@ -234,7 +234,6 @@ func FilterJobs(c *gin.Context) {
 
 	c.JSON(http.StatusOK, jobs)
 }
-
 
 // ApplyJobController handles job applications
 func ApplyJob(c *gin.Context) {
@@ -247,7 +246,7 @@ func ApplyJob(c *gin.Context) {
 		return
 	}
 
-	// ✅ Log received application data
+	//  Log received application data
 	log.Printf("[INFO] Received job application: JobSeekerID=%d, JobListingID=%d\n", application.JobSeekerID, application.JobListingID)
 
 	// Validate job_seeker_id & job_listing_id
@@ -257,7 +256,7 @@ func ApplyJob(c *gin.Context) {
 		return
 	}
 
-	// ✅ Call DB function to apply for job
+	//  Call DB function to apply for job
 	applicationID, err := db.ApplyJob(application.JobSeekerID, application.JobListingID, application.CoverLetter)
 	if err != nil {
 		if err.Error() == "you have already applied for this job" {
@@ -270,7 +269,7 @@ func ApplyJob(c *gin.Context) {
 		return
 	}
 
-	// ✅ Log successful application
+	//  Log successful application
 	log.Printf("[SUCCESS] JobSeekerID=%d successfully applied for JobListingID=%d (ApplicationID=%d)\n", application.JobSeekerID, application.JobListingID, applicationID)
 
 	c.JSON(http.StatusCreated, gin.H{"application_id": applicationID, "message": "Application submitted successfully"})

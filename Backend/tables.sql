@@ -1,15 +1,15 @@
 -- Job Seekers Table
 CREATE TABLE job_seekers (
-    id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,  --  Auto-increment ID (No need to set manually)
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    resume TEXT,
-    location VARCHAR(255),
-    profile_picture TEXT,
-    phone_number VARCHAR(10),
-    linkedin_url VARCHAR(255),
+    resume TEXT DEFAULT NULL,
+    location VARCHAR(255) DEFAULT NULL,
+    profile_picture TEXT DEFAULT NULL,
+    phone_number VARCHAR(15) DEFAULT NULL,
+    linkedin_url VARCHAR(255) DEFAULT NULL,\
     application_count INT DEFAULT 0,
     interview_count INT DEFAULT 0,
     result_count INT DEFAULT 0
@@ -47,7 +47,7 @@ CREATE TABLE job_listings (
     max_salary NUMERIC,
     posted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expiry_date TIMESTAMP NOT NULL,
-    applicant_count INT DEFAULT 0, -- ✅ Ensure future records default to 0
+    applicant_count INT DEFAULT 0, --  Ensure future records default to 0
     status VARCHAR(50) DEFAULT 'Open',
     job_category VARCHAR(255) NOT NULL
 );
@@ -132,13 +132,13 @@ CREATE TABLE messages (
     is_read BOOLEAN DEFAULT FALSE
 );
 
--- ✅ Ensure existing `applicant_count` values are 0 where NULL
+--  Ensure existing `applicant_count` values are 0 where NULL
 UPDATE job_listings SET applicant_count = 0 WHERE applicant_count IS NULL;
 
 
 -- Stored Procedures
 
--- ✅ Function to Create a Job Listing
+--  Function to Create a Job Listing
 CREATE OR REPLACE FUNCTION create_job(
     employer_id INT, 
     job_title VARCHAR, 
@@ -168,7 +168,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- ✅ Function to Add a Requirement to a Job
+--  Function to Add a Requirement to a Job
 CREATE OR REPLACE FUNCTION add_requirement(
     job_listing_id INT, 
     requirement_name VARCHAR
@@ -180,20 +180,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- ✅ Function for Applying to a Job
+-- Function for Applying to a Job
 CREATE OR REPLACE FUNCTION apply_for_job(
-    job_seeker_id INT, 
-    job_listing_id INT, 
-    cover_letter TEXT
+    p_job_seeker_id INT, 
+    p_job_listing_id INT, 
+    p_cover_letter TEXT
 ) RETURNS INT AS $$
 DECLARE 
     new_application_id INT;
     already_applied BOOLEAN;
 BEGIN
-    -- Check if user already applied
+    -- Check if the user has already applied
     SELECT EXISTS (
-        SELECT 1 FROM applications WHERE job_seeker_id = apply_for_job.job_seeker_id 
-        AND job_listing_id = apply_for_job.job_listing_id
+        SELECT 1 FROM applications 
+        WHERE applications.job_seeker_id = p_job_seeker_id 
+        AND applications.job_listing_id = p_job_listing_id
     ) INTO already_applied;
 
     IF already_applied THEN
@@ -204,20 +205,19 @@ BEGIN
     INSERT INTO applications (
         job_seeker_id, job_listing_id, application_status, applied_date, cover_letter
     ) VALUES (
-        job_seeker_id, job_listing_id, 'Applied', NOW(), cover_letter
+        p_job_seeker_id, p_job_listing_id, 'Applied', NOW(), p_cover_letter
     ) RETURNING id INTO new_application_id;
 
     -- Update job applicant count
     UPDATE job_listings 
     SET applicant_count = COALESCE(applicant_count, 0) + 1 
-    WHERE id = job_listing_id;
+    WHERE job_listings.id = p_job_listing_id;
 
     RETURN new_application_id;
 END;
 $$ LANGUAGE plpgsql;
 
-
--- ✅ Function to Fetch Open Jobs (with Pagination)
+--  Function to Fetch Open Jobs (with Pagination)
 CREATE OR REPLACE FUNCTION fetch_open_jobs(p_limit INT, p_offset INT)
 RETURNS TABLE (
     id INT,
@@ -281,7 +281,7 @@ $$ LANGUAGE plpgsql;
 
 
 
--- ✅ Function to Filter Jobs with Skills
+--  Function to Filter Jobs with Skills
 CREATE OR REPLACE FUNCTION filter_jobs(
     p_location VARCHAR DEFAULT NULL,
     p_job_type VARCHAR DEFAULT NULL,
@@ -325,7 +325,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- ✅ Trigger to Increment Applicant Count
+--  Trigger to Increment Applicant Count
 CREATE OR REPLACE FUNCTION update_applicant_count() RETURNS TRIGGER AS $$
 BEGIN
     UPDATE job_listings
@@ -341,7 +341,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_applicant_count();
 
 
--- ✅ Trigger to Prevent Expired Job Applications
+--  Trigger to Prevent Expired Job Applications
 CREATE OR REPLACE FUNCTION prevent_expired_applications() RETURNS TRIGGER AS $$
 DECLARE job_expiry DATE;
 BEGIN
@@ -361,7 +361,7 @@ FOR EACH ROW
 EXECUTE FUNCTION prevent_expired_applications();
 
 
--- ✅ Trigger to Close Expired Jobs
+--  Trigger to Close Expired Jobs
 CREATE OR REPLACE FUNCTION close_expired_jobs() RETURNS TRIGGER AS $$
 BEGIN
     UPDATE job_listings
@@ -378,7 +378,7 @@ FOR EACH ROW
 EXECUTE FUNCTION close_expired_jobs();
 
 
--- ✅ Trigger to Prevent Duplicate Applications
+--  Trigger to Prevent Duplicate Applications
 CREATE OR REPLACE FUNCTION prevent_duplicate_applications() RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (
@@ -398,64 +398,91 @@ FOR EACH ROW
 EXECUTE FUNCTION prevent_duplicate_applications();
 
 
-
--- Function to prevent duplicate job postings
-CREATE OR REPLACE FUNCTION prevent_duplicate_jobs() RETURNS TRIGGER AS $$
-DECLARE 
-    duplicate_exists BOOLEAN;
+CREATE OR REPLACE FUNCTION update_application_counts()
+RETURNS TRIGGER AS $$
 BEGIN
-    -- Check if a duplicate job already exists
-    SELECT EXISTS (
-        SELECT 1 
-        FROM job_listings 
-        WHERE employer_id = NEW.employer_id
-        AND job_title = NEW.job_title
-        AND description = NEW.description
-        AND location = NEW.location
-        AND job_type = NEW.job_type
-        AND min_salary = NEW.min_salary
-        AND max_salary = NEW.max_salary
-        AND job_category = NEW.job_category
-        AND status = 'Open'
-    ) INTO duplicate_exists;
-
-    -- If a duplicate exists, prevent insertion
-    IF duplicate_exists THEN
-        RAISE EXCEPTION 'Duplicate job listing already exists';
+    -- Case 1: New Application Added
+    IF TG_OP = 'INSERT' THEN
+        UPDATE job_seekers
+        SET application_count = application_count + 1
+        WHERE id = NEW.job_seeker_id;
+    
+    -- Case 2: Application Status Updated from 'Applied' to 'Approved' or 'Rejected'
+    ELSIF TG_OP = 'UPDATE' AND OLD.application_status = 'Applied' AND NEW.application_status IN ('Approved', 'Rejected') THEN
+        UPDATE job_seekers
+        SET application_count = application_count - 1,
+            result_count = result_count + 1
+        WHERE id = NEW.job_seeker_id;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to call prevent_duplicate_jobs before inserting a new job
-CREATE TRIGGER trigger_prevent_duplicate_jobs
-BEFORE INSERT ON job_listings
+CREATE TRIGGER application_status_update_trigger
+AFTER INSERT OR UPDATE ON applications
 FOR EACH ROW
-EXECUTE FUNCTION prevent_duplicate_jobs();
--
+EXECUTE FUNCTION update_application_counts();
 
--- Function to delete old duplicate job postings before inserting a new one
-CREATE OR REPLACE FUNCTION delete_old_duplicate_jobs() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION update_interview_counts()
+RETURNS TRIGGER AS $$
 BEGIN
-    -- Delete older duplicates before inserting the new one
-    DELETE FROM job_listings
-    WHERE employer_id = NEW.employer_id
-    AND job_title = NEW.job_title
-    AND description = NEW.description
-    AND location = NEW.location
-    AND job_type = NEW.job_type
-    AND min_salary = NEW.min_salary
-    AND max_salary = NEW.max_salary
-    AND job_category = NEW.job_category
-    AND status = 'Open';
+    -- Case 1: New Interview Added
+    IF TG_OP = 'INSERT' THEN
+        UPDATE job_seekers
+        SET interview_count = interview_count + 1
+        WHERE id = (SELECT job_seeker_id FROM applications WHERE id = NEW.application_id);
+
+    -- Case 2: Interview Deleted
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE job_seekers
+        SET interview_count = interview_count - 1
+        WHERE id = (SELECT job_seeker_id FROM applications WHERE id = OLD.application_id);
+    END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to call delete_old_duplicate_jobs before inserting a new job
-CREATE TRIGGER trigger_delete_old_duplicate_jobs
-BEFORE INSERT ON job_listings
+CREATE TRIGGER interview_count_trigger
+AFTER INSERT OR DELETE ON interviews
 FOR EACH ROW
-EXECUTE FUNCTION delete_old_duplicate_jobs();
+EXECUTE FUNCTION update_interview_counts();
+
+CREATE OR REPLACE FUNCTION generate_notification_id()
+RETURNS INT AS $$
+DECLARE
+    new_id INT;
+BEGIN
+    -- Get the next available ID
+    SELECT COALESCE(MAX(id), 0) + 1 INTO new_id FROM notifications;
+    
+    RETURN new_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION generate_notification_id()
+RETURNS INT AS $$
+DECLARE
+    new_id INT;
+BEGIN
+    -- Get the next available ID
+    SELECT COALESCE(MAX(id), 0) + 1 INTO new_id FROM notifications;
+    
+    RETURN new_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION generate_notification_id()
+RETURNS INT AS $$
+DECLARE
+    new_id INT;
+BEGIN
+    -- Get the next available ID
+    SELECT COALESCE(MAX(id), 0) + 1 INTO new_id FROM notifications;
+    
+    RETURN new_id;
+END;
+$$ LANGUAGE plpgsql;

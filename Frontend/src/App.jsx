@@ -11,7 +11,15 @@ import Mainpage from "./components/mainpage/mainpage";
 import JobListings from "./components/jobListing/JobListings";
 import Apply from "./components/Apply/apply";
 import NotFound from "./components/NotFound/notfound";
-import Layout from "./components/layout/Layout"; // ✅ Wrap protected pages inside Layout
+import Layout from "./components/layout/Layout"; //  Wrap protected pages inside Layout
+import EmployerDashboard from "./components/EmployerDashboard/employerDashboard";
+import PostJob from "./components/PostJob/postJob";
+import EmployerJob from "./components/EmployerJobDetails/EmployerJobDetails";
+import EditJob from "./components/EditJob/editJob";
+import Logout from "./components/Logout/Logout";
+import EmployerProfile from "./components/Profile/EmployerProfile";
+import JobSeekerProfile from "./components/Profile/JobSeekerProfile";
+
 
 const router = createBrowserRouter([
   {
@@ -40,20 +48,52 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Layout />, // ✅ Only show Navbar & BottomNav after login
+    element: <Layout />, //  Only show Navbar & BottomNav after login
     children: [
       {
         path: "/mainpage",
         element: <ProtectedRoute component={Mainpage} />,
+        // element: <Mainpage />,
       },
       {
         path: "/jobs",
         element: <ProtectedRoute component={JobListings} />,
+        // element: <JobListings />,
       },
       {
         path: "/apply/:jobId",
         element: <ProtectedRoute component={Apply} />,
+        // element: <Apply />,
       },
+      {
+        path: "/employer/dashboard",
+        element: <ProtectedRoute component={EmployerDashboard} />,
+      },
+      {
+        path: "/employer/postjob",
+        element: <ProtectedRoute component={PostJob} />,
+      },
+      {
+        path: "/employer/job/:id",
+        element: <ProtectedRoute component={EmployerJob} />,
+      },
+      {
+        path: "/employer/job/:id/edit",
+        element: <ProtectedRoute component={EditJob} />,
+      },
+      {
+        path: "/logout",
+        element: <ProtectedRoute component={Logout} />,
+      },
+      {
+        path: "/employer/profile",
+        element: <ProtectedRoute component={EmployerProfile} />,
+      },
+      {
+        path: "/jobseeker/profile",
+        element: <ProtectedRoute component={JobSeekerProfile} />,
+      },     
+
     ],
   },
   {

@@ -9,74 +9,12 @@ import (
 )
 
 func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, error) {
-	tx, err := config.DB.Begin(ctx) // Start a transaction
-	if err != nil {
-		return 0, err
-	}
-
+	query := `SELECT signup_job_seeker($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	var jobSeekerID int
-	//  Insert Job Seeker First
-	query := `
-        INSERT INTO job_seekers (
-            first_name, last_name, email, password, resume, location, profile_picture, phone_number, linkedin_url
-        ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9
-        )
-        RETURNING id
-    `
-	err = tx.QueryRow(ctx, query,
-		jobSeeker.FirstName,
-		jobSeeker.LastName,
-		jobSeeker.Email,
-		jobSeeker.Password,
-		jobSeeker.Resume,
-		jobSeeker.Location,
-		jobSeeker.ProfilePicture,
-		jobSeeker.PhoneNumber,
-		jobSeeker.LinkedinURL,
-	).Scan(&jobSeekerID)
-
-	if err != nil {
-		tx.Rollback(ctx)
-		return 0, err
-	}
-
-	//  Insert Education (If provided)
-	if len(jobSeeker.Education) > 0 {
-		eduQuery := `
-			INSERT INTO education (job_seeker_id, education_level, institution_name, field_of_study, start_year, end_year, grade)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`
-		for _, edu := range jobSeeker.Education {
-			_, err := tx.Exec(ctx, eduQuery, jobSeekerID, edu.Level, edu.Institution, edu.FieldOfStudy, edu.StartYear, edu.EndYear, edu.Grade)
-			if err != nil {
-				tx.Rollback(ctx)
-				return 0, err
-			}
-		}
-	}
-
-	//  Insert Experience (If provided)
-	if len(jobSeeker.Experience) > 0 {
-		expQuery := `
-			INSERT INTO experience (job_seeker_id, job_title, company_name, location, start_date, end_date)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`
-		for _, exp := range jobSeeker.Experience {
-			_, err := tx.Exec(ctx, expQuery, jobSeekerID, exp.JobTitle, exp.CompanyName, exp.Location, exp.StartDate, exp.EndDate)
-			if err != nil {
-				tx.Rollback(ctx)
-				return 0, err
-			}
-		}
-	}
-
-	//  Commit the transaction
-	err = tx.Commit(ctx)
+	err := config.DB.QueryRow(ctx, query, jobSeeker.FirstName, jobSeeker.LastName, jobSeeker.Email, jobSeeker.Password, jobSeeker.Location, jobSeeker.PhoneNumber, jobSeeker.LinkedinURL, jobSeeker.Resume, jobSeeker.ProfilePicture).Scan(&jobSeekerID)
 	if err != nil {
 		return 0, err
 	}
-
 	return jobSeekerID, nil
 }
 

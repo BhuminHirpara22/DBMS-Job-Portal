@@ -1,15 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaBriefcase, FaUserTie, FaClipboardList, FaBell, FaSearch, FaUsers, FaChartLine, FaCheckCircle, FaStar } from "react-icons/fa";
+import { FaBriefcase, FaUserTie, FaClipboardList, FaBell, FaSearch, FaUsers, FaChartLine, FaCheckCircle, FaStar, FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaClock, FaFilter } from "react-icons/fa";
 
 const Mainpage = () => {
   const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const categories = [
+    { id: "all", name: "All Categories" },
+    { id: "tech", name: "Technology" },
+    { id: "finance", name: "Finance" },
+    { id: "healthcare", name: "Healthcare" },
+    { id: "education", name: "Education" },
+    { id: "marketing", name: "Marketing" }
+  ];
+
+  const locations = [
+    { id: "all", name: "All Locations" },
+    { id: "remote", name: "Remote" },
+    { id: "hybrid", name: "Hybrid" },
+    { id: "onsite", name: "On-site" }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
@@ -37,10 +56,10 @@ const Mainpage = () => {
         <div className={`text-center py-16 px-4 sm:px-6 lg:px-8 transform transition-all duration-500 
                         ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
           <h1 className="text-4xl sm:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-            Welcome to Your Dashboard
+            Find Your Dream Job Today
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
-            Explore job opportunities, manage applications, and stay updated with the latest career prospects!
+            Connect with top employers and discover opportunities that match your skills and aspirations
           </p>
 
           {/* Quick Stats */}
@@ -87,20 +106,63 @@ const Mainpage = () => {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto group">
+          {/* Advanced Search Bar */}
+          <div className="relative max-w-4xl mx-auto group mb-12">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-xl 
                           transition-all duration-500 group-hover:opacity-100 opacity-0"></div>
-            <div className="relative flex items-center bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 
+            <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 
                           p-2 group-hover:border-blue-500/50 transition-all duration-300 group-hover:shadow-xl 
                           group-hover:shadow-blue-500/20">
-              <FaSearch className="text-gray-400 ml-4 group-hover:text-blue-400 transition-colors duration-300" />
-              <input
-                type="text"
-                placeholder="Search for jobs..."
-                className="w-full bg-transparent border-none outline-none text-white placeholder-gray-400 px-4 py-3"
-              />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 flex items-center">
+                  <FaSearch className="text-gray-400 ml-4 group-hover:text-blue-400 transition-colors duration-300" />
+                  <input
+                    type="text"
+                    placeholder="Search jobs by title, company, or keyword..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent border-none outline-none text-white placeholder-gray-400 px-4 py-3"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-gray-700/50 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  >
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    className="bg-gray-700/50 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  >
+                    {locations.map(location => (
+                      <option key={location.id} value={location.id}>{location.name}</option>
+                    ))}
+                  </select>
+                  <button className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-6 py-2 flex items-center gap-2 transition-colors duration-300">
+                    <FaFilter className="text-sm" />
+                    Filters
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* Featured Job Categories */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto mb-12">
+            {categories.slice(1).map(category => (
+              <div key={category.id} className="group bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 text-center border border-gray-700/50 
+                                              hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 
+                                              cursor-pointer hover:-translate-y-1">
+                <p className="text-white text-sm group-hover:text-blue-400 transition-colors duration-300">
+                  {category.name}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 

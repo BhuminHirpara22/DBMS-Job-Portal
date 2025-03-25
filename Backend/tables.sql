@@ -9,7 +9,7 @@ CREATE TABLE job_seekers (
     location VARCHAR(255) DEFAULT NULL,
     profile_picture TEXT DEFAULT NULL,
     phone_number VARCHAR(15) DEFAULT NULL,
-    linkedin_url VARCHAR(255) DEFAULT NULL,\
+    linkedin_url VARCHAR(255) DEFAULT NULL,
     application_count INT DEFAULT 0,
     interview_count INT DEFAULT 0,
     result_count INT DEFAULT 0
@@ -190,25 +190,35 @@ DECLARE
     new_application_id INT;
     already_applied BOOLEAN;
 BEGIN
-    -- Check if the user has already applied
-    SELECT EXISTS (
-        SELECT 1 FROM applications 
-        WHERE applications.job_seeker_id = p_job_seeker_id 
-        AND applications.job_listing_id = p_job_listing_id
-    ) INTO already_applied;
+    -- Start transaction
+    BEGIN
+        -- Check if the user has already applied
+        SELECT EXISTS (
+            SELECT 1 FROM applications 
+            WHERE applications.job_seeker_id = p_job_seeker_id 
+            AND applications.job_listing_id = p_job_listing_id
+        ) INTO already_applied;
 
-    IF already_applied THEN
-        RAISE EXCEPTION 'User has already applied for this job';
-    END IF;
+        IF already_applied THEN
+            RAISE EXCEPTION 'User has already applied for this job';
+        END IF;
 
-    -- Insert application
-    INSERT INTO applications (
-        job_seeker_id, job_listing_id, application_status, applied_date, cover_letter
-    ) VALUES (
-        p_job_seeker_id, p_job_listing_id, 'Applied', NOW(), p_cover_letter
-    ) RETURNING id INTO new_application_id;
+        -- Insert application
+        INSERT INTO applications (
+            job_seeker_id, job_listing_id, application_status, applied_date, cover_letter
+        ) VALUES (
+            p_job_seeker_id, p_job_listing_id, 'Applied', NOW(), p_cover_letter
+        ) RETURNING id INTO new_application_id;
 
-    RETURN new_application_id;
+        -- If we get here, commit the transaction
+        COMMIT;
+        RETURN new_application_id;
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Rollback on any error
+            ROLLBACK;
+            RAISE EXCEPTION 'Error during job application: %', SQLERRM;
+    END;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -481,3 +491,96 @@ BEGIN
     RETURN new_id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function for Job Seeker Signup
+CREATE OR REPLACE FUNCTION signup_job_seeker(
+    p_first_name VARCHAR,
+    p_last_name VARCHAR,
+    p_email VARCHAR,
+    p_password VARCHAR,
+    p_location VARCHAR DEFAULT NULL,
+    p_phone_number VARCHAR DEFAULT NULL,
+    p_linkedin_url VARCHAR DEFAULT NULL,
+    p_resume TEXT DEFAULT NULL,
+    p_profile_picture TEXT DEFAULT NULL
+
+) RETURNS INT AS $$
+DECLARE
+    new_user_id INT;
+BEGIN
+    -- Start transaction
+    BEGIN
+        -- Check if email already exists
+        IF EXISTS (SELECT 1 FROM job_seekers WHERE email = p_email) THEN
+            RAISE EXCEPTION 'Email already registered';
+        END IF;
+
+        -- Insert new user
+        INSERT INTO job_seekers (
+            first_name, last_name, email, password,
+            location, phone_number, linkedin_url, resume, profile_picture   
+        ) VALUES (
+            p_first_name, p_last_name, p_email, p_password,
+            p_location, p_phone_number, p_linkedin_url, p_resume, p_profile_picture
+        ) RETURNING id INTO new_user_id;
+
+        -- If we get here, commit the transaction
+        COMMIT;
+        RETURN new_user_id;
+    EXCEPTION
+        WHEN unique_violation THEN
+            -- Rollback on duplicate email
+            ROLLBACK;
+            RAISE EXCEPTION 'Email already registered';
+        WHEN OTHERS THEN
+            -- Rollback on any other error
+            ROLLBACK;
+            RAISE EXCEPTION 'Error during signup: %', SQLERRM;
+    END;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function for Employer Signup
+CREATE OR REPLACE FUNCTION signup_employer(
+    p_company_id INT NOT NULL REFERENCES company(id) ON DELETE CASCADE,
+    p_email VARCHAR(255) UNIQUE NOT NULL,
+    p_password VARCHAR(255) NOT NULL,
+    p_description TEXT DEFAULT NULL,
+    p_contact_person VARCHAR(255) DEFAULT NULL,
+    p_contact_number VARCHAR(15) DEFAULT NULL
+    
+
+) RETURNS INT AS $$
+DECLARE
+    new_employer_id INT;
+BEGIN
+    -- Start transaction
+    BEGIN
+        -- Check if email already exists
+        IF EXISTS (SELECT 1 FROM employers WHERE email = p_email) THEN
+            RAISE EXCEPTION 'Email already registered';
+        END IF;
+
+        -- Insert new employer
+        INSERT INTO employers (
+            companyid, email, password, description, contact_person, contact_number
+        ) VALUES (
+            p_company_id, p_email, p_password, p_description, p_contact_person, p_contact_number
+        ) RETURNING id INTO new_employer_id;
+
+        -- If we get here, commit the transaction
+        COMMIT;
+        RETURN new_employer_id;
+    EXCEPTION
+        WHEN unique_violation THEN
+            -- Rollback on duplicate email
+            ROLLBACK;
+            RAISE EXCEPTION 'Email already registered';
+        WHEN OTHERS THEN
+            -- Rollback on any other error
+            ROLLBACK;
+            RAISE EXCEPTION 'Error during signup: %', SQLERRM;
+    END;
+END;
+$$ LANGUAGE plpgsql;
+

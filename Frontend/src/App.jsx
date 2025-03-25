@@ -19,6 +19,7 @@ import EditJob from "./components/EditJob/editJob";
 import Logout from "./components/Logout/Logout";
 import EmployerProfile from "./components/Profile/EmployerProfile";
 import JobSeekerProfile from "./components/Profile/JobSeekerProfile";
+import AppliedJobs from "./components/Apply/AppliedJobs";
 
 
 const router = createBrowserRouter([
@@ -92,7 +93,11 @@ const router = createBrowserRouter([
       {
         path: "/jobseeker/profile",
         element: <ProtectedRoute component={JobSeekerProfile} />,
-      },     
+      },
+      {
+        path: "/applied-jobs",
+        element: <ProtectedRoute component={AppliedJobs} />,
+      },
 
     ],
   },

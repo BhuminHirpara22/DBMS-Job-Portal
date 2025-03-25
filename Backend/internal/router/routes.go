@@ -62,7 +62,7 @@ func SetupRoutes(router *gin.Engine) {
 	employerRoutes.Use(middleware.AuthMiddleware("employer")) // Secure with employer authentication
 	{
 		employerRoutes.POST("/jobs", controller.CreateJob)                 // Employer can post jobs
-		employerRoutes.GET("/jobs", controller.FetchJobsByEmployer) // Fetch jobs posted by employer
+		employerRoutes.GET("/jobs", controller.FetchJobsByEmployer) 	   // Fetch jobs posted by employer
 		employerRoutes.PUT("/jobs/:id", controller.UpdateJob)              // Employer can update jobs
 		employerRoutes.DELETE("/jobs/:id", controller.DeleteJob)           // Employer can delete jobs
 	}
@@ -75,6 +75,7 @@ func SetupRoutes(router *gin.Engine) {
 		jobSeekerRoutes.GET("/jobs/:id", controller.FetchJob)       // Job seeker can view a job
 		jobSeekerRoutes.GET("/jobs/filter", controller.FilterJobs)   // Job seeker can filter jobs
 		jobSeekerRoutes.POST("/apply", controller.ApplyJob) // Job seeker can apply for jobs
+		jobSeekerRoutes.GET("/jobsApplied/:id", controller.GetAllJobsThatSeekerApplied) 
 	}
 
 	// Public Routes (No authentication required)

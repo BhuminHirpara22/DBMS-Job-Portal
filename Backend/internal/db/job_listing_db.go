@@ -240,3 +240,42 @@ func ApplyJob(jobSeekerID, jobListingID int, coverLetter string) (int, error) {
 	log.Printf("[SUCCESS] Job Application Submitted: JobSeekerID=%d, JobID=%d\n", jobSeekerID, jobListingID)
 	return applicationID, nil
 }
+
+
+
+// GetAllJobsThatSeekerApplied retrieves all jobs that a specific job seeker has applied for
+func GetAllJobsThatSeekerApplied(jobSeekerID int) ([]schema.JobListing, error) {
+	db := config.GetDB()
+	query := `
+		SELECT jl.*
+		FROM job_listings jl
+		JOIN applications a ON jl.id = a.job_listing_id
+		WHERE a.job_seeker_id = $1
+		ORDER BY jl.posted_date DESC
+	`
+	rows, err := db.Query(context.Background(), query, jobSeekerID)
+	if err != nil {
+		log.Println("[ERROR] GetAllJobsThatSeekerApplied - Error fetching jobs:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []schema.JobListing
+	for rows.Next() {
+		var job schema.JobListing
+		err := rows.Scan(
+			&job.ID, &job.EmployerID, &job.JobTitle, &job.Description, &job.Location,
+			&job.JobType, &job.MinSalary, &job.MaxSalary, &job.PostedDate, &job.ExpiryDate,
+			&job.ApplicantCount, &job.Status, &job.JobCategory,
+		)
+		if err != nil {
+			log.Println("[ERROR] GetAllJobsThatSeekerApplied - Error scanning job:", err)
+			continue
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	log.Printf("[SUCCESS] GetAllJobsThatSeekerApplied - %d jobs retrieved\n", len(jobs))
+	return jobs, nil
+}

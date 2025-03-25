@@ -274,3 +274,21 @@ func ApplyJob(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"application_id": applicationID, "message": "Application submitted successfully"})
 }
+
+
+// GetAllJobsThatSeekerApplied retrieves all jobs that a specific job seeker has applied for
+func GetAllJobsThatSeekerApplied(c *gin.Context) {
+	jobSeekerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	jobs, err := db.GetAllJobsThatSeekerApplied(jobSeekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get jobs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, jobs)
+}

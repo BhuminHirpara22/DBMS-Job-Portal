@@ -107,14 +107,14 @@ func RegisterEmployer(ctx context.Context, employer schema.Employer) (int, error
 }
 
 // GetJobSeekerByEmail gets a job seeker by email
-func GetJobSeekerByEmail(ctx context.Context, email string) (schema.JobSeeker, error) {
+func GetJobSeeker(ctx context.Context, id int) (schema.JobSeeker, error) {
 	query := `
 		SELECT id, first_name, last_name, email, password, location, profile_picture, phone_number, linkedin_url 
-		FROM job_seekers WHERE email = $1
+		FROM job_seekers WHERE id = $1
 	`
 	var jobSeeker schema.JobSeeker
 
-	err := config.DB.QueryRow(ctx, query, email).Scan(
+	err := config.DB.QueryRow(ctx, query, id).Scan(
 		&jobSeeker.ID,
 		&jobSeeker.FirstName,
 		&jobSeeker.LastName,
@@ -134,14 +134,14 @@ func GetJobSeekerByEmail(ctx context.Context, email string) (schema.JobSeeker, e
 }
 
 // GetEmployerByEmail gets an employer by email
-func GetEmployerByEmail(ctx context.Context, email string) (schema.Employer, error) {
+func GetEmployer(ctx context.Context, id int) (schema.Employer, error) {
 	query := `
 		SELECT id, companyid, email, password, description, contact_person, contact_number 
-		FROM employers WHERE email = $1
+		FROM employers WHERE id = $1
 	`
 	var employer schema.Employer
 
-	err := config.DB.QueryRow(ctx, query, email).Scan(
+	err := config.DB.QueryRow(ctx, query, id).Scan(
 		&employer.ID,
 		&employer.CompanyID,
 		&employer.Email,

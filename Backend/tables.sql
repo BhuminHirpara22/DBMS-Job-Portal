@@ -208,11 +208,6 @@ BEGIN
         p_job_seeker_id, p_job_listing_id, 'Applied', NOW(), p_cover_letter
     ) RETURNING id INTO new_application_id;
 
-    -- Update job applicant count
-    UPDATE job_listings 
-    SET applicant_count = COALESCE(applicant_count, 0) + 1 
-    WHERE job_listings.id = p_job_listing_id;
-
     RETURN new_application_id;
 END;
 $$ LANGUAGE plpgsql;

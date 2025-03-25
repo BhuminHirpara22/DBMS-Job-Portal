@@ -45,6 +45,8 @@ func SetupRoutes(router *gin.Engine) {
 		userGroup.POST("/register/employer", controller.RegisterEmployer)
 		userGroup.POST("/seeker_login", controller.SeekerLoginHandler)
 		userGroup.POST("/employer_login", controller.EmployerLoginHandler)
+		userGroup.GET("/get_jobseeker", controller.GetJobSeekerHandler)
+		userGroup.GET("/get_employer", controller.GetEmployerHandler)
 		userGroup.PUT("/update_jobseeker/:id", controller.UpdateJobSeekerProfile)
 		userGroup.PUT("/update_employer/:id", controller.UpdateEmployerProfile)
 		userGroup.DELETE("/delete_jobseeker/:id", controller.DeleteJobSeeker) 

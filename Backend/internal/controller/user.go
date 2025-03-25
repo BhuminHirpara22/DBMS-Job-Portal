@@ -158,6 +158,40 @@ func EmployerLoginHandler(c *gin.Context) {
 	})
 }
 
+func GetJobSeekerHandler(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param(("id")))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID parameter"})
+		return
+	}
+
+	jobseeker, err := db.GetJobSeeker(c, id)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"profile": jobseeker})
+}
+
+func GetEmployerHandler(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param(("id")))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID parameter"})
+		return
+	}
+
+	employer, err := db.GetEmployer(c, id)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"profile": employer})
+}
+
 // ------------------------------
 // Update Handlers
 // ------------------------------

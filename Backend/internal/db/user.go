@@ -158,7 +158,7 @@ func ValidateEmployerCredentials(ctx context.Context, email, password string) (s
 }
 
 // UpdateJobSeeker updates an existing job seeker record.
-func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) error {
+func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (schema.JobSeeker, error) {
 	query := `
 		UPDATE job_seekers 
 		SET first_name = $1,
@@ -170,8 +170,11 @@ func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) error {
 			phone_number = $7,
 			linkedin_url = $8
 		WHERE id = $9
+		RETURNING id, first_name, last_name, email, location, profile_picture, phone_number, linkedin_url
 	`
-	_, err := config.DB.Exec(ctx, query,
+
+	var updatedProfile schema.JobSeeker
+	err := config.DB.QueryRow(ctx, query,
 		jobSeeker.FirstName,
 		jobSeeker.LastName,
 		jobSeeker.Email,
@@ -181,9 +184,24 @@ func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) error {
 		jobSeeker.PhoneNumber,
 		jobSeeker.LinkedinURL,
 		jobSeeker.ID,
+	).Scan(
+		&updatedProfile.ID,
+		&updatedProfile.FirstName,
+		&updatedProfile.LastName,
+		&updatedProfile.Email,
+		&updatedProfile.Location,
+		&updatedProfile.ProfilePicture,
+		&updatedProfile.PhoneNumber,
+		&updatedProfile.LinkedinURL,
 	)
-	return err
+
+	if err != nil {
+		return schema.JobSeeker{}, err
+	}
+
+	return updatedProfile, nil
 }
+
 
 // UpdateEmployer updates an existing employer record.
 func UpdateEmployer(ctx context.Context, employer schema.Employer) error {

@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUser, FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaBriefcase, FaUsers, FaChartLine, FaCalendarAlt } from "react-icons/fa";
+import { FaFileAlt, FaUser, FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaBriefcase, FaUsers, FaChartLine, FaCalendarAlt } from "react-icons/fa";
 import { getToken } from "../../../tokenUtils";
-
+import axios from "axios";
 const EmployerProfile = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState({
+    name: "",
     company_name: "",
     email: "",
     phone: "",
     location: "",
     description: "",
     website: "",
-    founded_date: "",
     industry: "",
-    company_size: "",
   });
 
   useEffect(() => {
@@ -27,15 +26,43 @@ const EmployerProfile = () => {
   const fetchProfile = async () => {
     try {
       const token = getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/employer/profile`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/get_employer/1`, {
         headers: {
-          Authorization: `employer-token`,
-        },
+        }
       });
 
-      if (!response.ok) throw new Error("Failed to fetch profile");
-      const data = await response.json();
-      setProfile(data);
+      console.log(response)
+      if (!(response.status===200)) throw new Error("Failed to fetch profile");
+  
+      const data = response.data.profile;
+      const safeProfile = {
+        name: data.contact_person || "",
+        company_name: data.company_name || "",
+        email: data.email || "",
+        phone: data.contact_number || "",
+        location: data.location || "",
+        description: data.description || "",
+        website: data.website || "",
+        industry: data.industry || "",
+      };
+
+      // type Employer struct {
+      //   ID            int     `json:"id" db:"id"`
+      //   CompanyID     int     `json:"company_id" db:"companyid" binding:"required"`
+      //   Email         string  `json:"email" db:"email" binding:"required,email"`
+      //   Password      string  `json:"password" db:"password" binding:"required,min=6"`
+      //   Description   *string `json:"description,omitempty" db:"description"`
+      //   ContactPerson *string `json:"contact_person,omitempty" db:"contact_person"`
+      //   ContactNumber *string `json:"contact_number,omitempty" db:"contact_number"`
+      //   // Company information
+      //   CompanyName string  `json:"company_name" db:"company_name"`
+      //   Industry    *string `json:"industry,omitempty" db:"industry"`
+      //   Website     *string `json:"website,omitempty" db:"website"`
+      //   Location    *string `json:"location,omitempty" db:"location"`
+      // }
+      
+  
+      setProfile(safeProfile);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -111,6 +138,19 @@ const EmployerProfile = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Company Name */}
               <div className="group sm:col-span-2">
+              <label className="block text-gray-300 font-medium mb-2 flex items-center">
+                  <FaBuilding className="mr-2 text-blue-400" />
+                  Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={profile.name}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
+                  required
+                />
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaBuilding className="mr-2 text-blue-400" />
                   Company Name
@@ -161,7 +201,7 @@ const EmployerProfile = () => {
               </div>
 
               {/* Location */}
-              <div className="group">
+              {/* <div className="group">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaMapMarkerAlt className="mr-2 text-blue-400" />
                   Location
@@ -175,7 +215,7 @@ const EmployerProfile = () => {
                   className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
                   required
                 />
-              </div>
+              </div> */}
 
               {/* Website */}
               <div className="group">
@@ -211,46 +251,6 @@ const EmployerProfile = () => {
                 />
               </div>
 
-              {/* Company Size */}
-              <div className="group">
-                <label className="block text-gray-300 font-medium mb-2 flex items-center">
-                  <FaUsers className="mr-2 text-blue-400" />
-                  Company Size
-                </label>
-                <select
-                  name="company_size"
-                  value={profile.company_size}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
-                  required
-                >
-                  <option value="">Select Size</option>
-                  <option value="1-10">1-10 employees</option>
-                  <option value="11-50">11-50 employees</option>
-                  <option value="51-200">51-200 employees</option>
-                  <option value="201-500">201-500 employees</option>
-                  <option value="501-1000">501-1000 employees</option>
-                  <option value="1000+">1000+ employees</option>
-                </select>
-              </div>
-
-              {/* Founded Date */}
-              <div className="group">
-                <label className="block text-gray-300 font-medium mb-2 flex items-center">
-                  <FaCalendarAlt className="mr-2 text-blue-400" />
-                  Founded Date
-                </label>
-                <input
-                  type="date"
-                  name="founded_date"
-                  value={profile.founded_date}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
-                  required
-                />
-              </div>
             </div>
 
             {/* Company Description */}

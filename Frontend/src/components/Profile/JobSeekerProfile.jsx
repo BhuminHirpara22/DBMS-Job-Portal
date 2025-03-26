@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaGraduationCap, FaBriefcase, FaFileAlt, FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaEdit,
+  FaSave,
+  FaTimes,
+  FaGraduationCap,
+  FaBriefcase,
+  FaFileAlt,
+  FaLinkedin,
+  FaGithub,
+  FaGlobe,
+  FaPlus,
+} from "react-icons/fa";
 import { getToken } from "../../../tokenUtils";
+import axios from "axios";
 
 const JobSeekerProfile = () => {
   const navigate = useNavigate();
@@ -9,18 +25,18 @@ const JobSeekerProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState({
-    full_name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     location: "",
-    bio: "",
     skills: [],
     experience: [],
     education: [],
     resume_url: "",
     linkedin_url: "",
-    github_url: "",
-    portfolio_url: "",
+    // github_url: "",
+    // portfolio_url: "",
   });
 
   useEffect(() => {
@@ -30,21 +46,54 @@ const JobSeekerProfile = () => {
   const fetchProfile = async () => {
     try {
       const token = getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/seeker/profile`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/get_jobseeker/1`, {
         headers: {
-          Authorization: `seeker-token`,
-        },
+        }
       });
 
-      if (!response.ok) throw new Error("Failed to fetch profile");
-      const data = await response.json();
-      setProfile(data);
+      console.log(response)
+      if (!(response.status===200)) throw new Error("Failed to fetch profile");
+  
+      const data = response.data.profile;
+
+      // Ensure the structure is consistent
+      const safeProfile = {
+        id: data.id,
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        email: data.email || "",
+        phone: data.phone_number || "",
+        location: data.location || "",
+        // bio: data.bio || "",
+        skills: data.skills || [],    // Ensure `skills` is always an array
+        experience: data.experience || [],
+        education: data.education || [],
+        resume_url: data.resume_url || "",
+        linkedin_url: data.linkedin_url || "",
+        // github_url: data.github_url || "",
+        // portfolio_url: data.portfolio_url || "",
+      };
+  
+      setProfile(safeProfile);
     } catch (error) {
       setError(error.message);
     } finally {
       setIsLoading(false);
     }
   };
+  // ID             int          `json:"id"`
+	// FirstName      string       `json:"first_name" binding:"required"`
+	// LastName       string       `json:"last_name" binding:"required"`
+	// Email          string       `json:"email" binding:"required,email"`
+	// Password       string       `json:"password" binding:"required,min=6"`
+	// Resume         string       `json:"resume,omitempty"`
+	// ProfilePicture *string      `json:"profile_picture,omitempty"`
+	// PhoneNumber    *string      `json:"phone_number,omitempty"`
+	// LinkedinURL    *string      `json:"linkedin_url,omitempty"`
+	// Location       *string      `json:"location,omitempty"`
+	// Education      []Education  `json:"education,omitempty"`
+	// Experience     []Experience `json:"experience,omitempty"`
+	// Skills         []Skill      `json:"skills,omitempty"`
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,20 +119,40 @@ const JobSeekerProfile = () => {
     e.preventDefault();
     try {
       const token = getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/seeker/profile`, {
-        method: "PUT",
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/user/update_jobseeker/1`, {
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `seeker-token`,
         },
         body: JSON.stringify(profile),
       });
 
-      if (!response.ok) throw new Error("Failed to update profile");
-      setIsEditing(false);
-      fetchProfile();
+      console.log(response)
+      if (!(response.status===200)) throw new Error("Failed to update profile");
+  
+      const data = response.data.profile;
+  
+      // Ensure the structure is consistent
+      const safeProfile = {
+        id: data.id,
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        email: data.email || "",
+        phone: data.phone_number || "",
+        location: data.location || "",
+        // bio: data.bio || "",
+        skills: data.skills || [],    // Ensure `skills` is always an array
+        experience: data.experience || [],
+        education: data.education || [],
+        resume_url: data.resume_url || "",
+        linkedin_url: data.linkedin_url || "",
+        // github_url: data.github_url || "",
+        // portfolio_url: data.portfolio_url || "",
+      };
+  
+      setProfile(safeProfile);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -131,12 +200,25 @@ const JobSeekerProfile = () => {
               <div className="group sm:col-span-2">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaUser className="mr-2 text-blue-400" />
-                  Full Name
+                  First Name
                 </label>
                 <input
                   type="text"
-                  name="full_name"
-                  value={profile.full_name}
+                  name="first_name"
+                  value={profile.first_name}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
+                  required
+                />
+                <label className="block text-gray-300 font-medium mb-2 flex items-center">
+                  <FaUser className="mr-2 text-blue-400" />
+                  Lasr Name
+                </label>
+                <input
+                  type="text"
+                  name="last_name"
+                  value={profile.last_name}
                   onChange={handleChange}
                   disabled={!isEditing}
                   className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
@@ -196,23 +278,6 @@ const JobSeekerProfile = () => {
               </div>
             </div>
 
-            {/* Professional Bio */}
-            <div className="group">
-              <label className="block text-gray-300 font-medium mb-2 flex items-center">
-                <FaFileAlt className="mr-2 text-blue-400" />
-                Professional Bio
-              </label>
-              <textarea
-                name="bio"
-                value={profile.bio}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 min-h-[150px] disabled:opacity-75"
-                required
-                placeholder="Write a brief professional bio..."
-              ></textarea>
-            </div>
-
             {/* Skills Section */}
             <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700/50">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
@@ -220,26 +285,21 @@ const JobSeekerProfile = () => {
                 Skills
               </h3>
               <div className="space-y-3">
-                {profile.skills.map((skill, index) => (
-                  <div key={index} className="flex items-center gap-3 group">
+                {(profile?.skills || []).map((skill, index) => (
+                  <div key={index} className="flex items-center">
                     <input
                       type="text"
                       value={skill}
                       onChange={(e) => handleSkillChange(index, e.target.value)}
-                      disabled={!isEditing}
-                      className="flex-1 p-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
-                      placeholder="Enter a skill..."
-                      required
+                      className="w-full p-2 bg-gray-800 border border-gray-600 rounded-lg"
                     />
-                    {isEditing && (
-                      <button
-                        type="button"
-                        onClick={() => removeSkill(index)}
-                        className="p-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-300"
-                      >
-                        <FaTimes />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeSkill(index)}
+                      className="ml-2 text-red-500"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))}
               </div>
@@ -273,39 +333,6 @@ const JobSeekerProfile = () => {
                 />
               </div>
 
-              {/* GitHub */}
-              <div className="group">
-                <label className="block text-gray-300 font-medium mb-2 flex items-center">
-                  <FaGithub className="mr-2 text-blue-400" />
-                  GitHub Profile
-                </label>
-                <input
-                  type="url"
-                  name="github_url"
-                  value={profile.github_url}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
-                  placeholder="https://github.com/..."
-                />
-              </div>
-
-              {/* Portfolio */}
-              <div className="group">
-                <label className="block text-gray-300 font-medium mb-2 flex items-center">
-                  <FaGlobe className="mr-2 text-blue-400" />
-                  Portfolio Website
-                </label>
-                <input
-                  type="url"
-                  name="portfolio_url"
-                  value={profile.portfolio_url}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
-                  placeholder="https://your-portfolio.com"
-                />
-              </div>
             </div>
 
             {/* Resume Upload */}
@@ -360,4 +387,4 @@ const JobSeekerProfile = () => {
   );
 };
 
-export default JobSeekerProfile; 
+export default JobSeekerProfile;

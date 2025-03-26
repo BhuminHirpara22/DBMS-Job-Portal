@@ -208,13 +208,18 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 	}
 
 	var jobSeeker schema.JobSeeker
-	if err := c.ShouldBindJSON(&jobSeeker); err != nil {
+	jobSeeker,err = db.GetJobSeeker(c, id)
+	var jobSeekerTemp schema.JobSeekerInput
+	if err := c.ShouldBindJSON(&jobSeekerTemp); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Set the ID to ensure we update the correct record.
-	jobSeeker.ID = id
+	jobSeeker.FirstName = jobSeekerTemp.FirstName
+	jobSeeker.LastName = jobSeekerTemp.LastName
+	jobSeeker.PhoneNumber = jobSeekerTemp.PhoneNumber
+	
 
 	// If the password is provided for update, hash it.
 	if jobSeeker.Password != "" {
@@ -226,14 +231,19 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 		jobSeeker.Password = hashedPassword
 	}
 
-	// Call the DB function to update the job seeker record.
-	if err := db.UpdateJobSeeker(context.Background(), jobSeeker); err != nil {
+	// Update the job seeker and retrieve the updated profile
+	updatedProfile, err := db.UpdateJobSeeker(context.Background(), jobSeeker)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Job Seeker profile updated successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Job Seeker profile updated successfully",
+		"profile": updatedProfile,
+	})
 }
+
 
 // UpdateEmployerProfile handles updating an employer's profile.
 // It follows the same pattern as the job seeker update.

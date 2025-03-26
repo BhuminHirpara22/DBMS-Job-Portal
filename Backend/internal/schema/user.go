@@ -15,6 +15,20 @@ type JobSeeker struct {
     Experience     []Experience `json:"experience" binding:"required,dive"`
 }
 
+type JobSeekerInput struct{
+	ID             int          `json:"id"`
+	FirstName      string       `json:"first_name" binding:"required"`
+	LastName       string       `json:"last_name" binding:"required"`
+	Email          string       `json:"email" binding:"required,email"`
+	Resume         string       `json:"resume,omitempty"`
+	PhoneNumber    *string      `json:"phone_number,omitempty"`
+	LinkedinURL    *string      `json:"linkedin_url,omitempty"`
+	Location       *string      `json:"location,omitempty"`
+	Education      []Education  `json:"education,omitempty"`
+	Experience     []Experience `json:"experience,omitempty"`
+	Skills         []Skill      `json:"skills,omitempty"`
+}
+
 type Education struct {
     Level          string `json:"education_level"`
     Institution    string `json:"institution_name"`

@@ -58,7 +58,6 @@ const JobSeekerProfile = () => {
 
       // Ensure the structure is consistent
       const safeProfile = {
-        id: data.id,
         first_name: data.first_name || "",
         last_name: data.last_name || "",
         email: data.email || "",
@@ -132,7 +131,6 @@ const JobSeekerProfile = () => {
   
       // Ensure the structure is consistent
       const safeProfile = {
-        id: data.id,
         first_name: data.first_name || "",
         last_name: data.last_name || "",
         email: data.email || "",

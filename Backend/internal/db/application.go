@@ -82,13 +82,14 @@ func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.Appli
 	return applications, nil
 }
 
-func GetJobApplications(ctx context.Context, applicationID int) (schema.ApplicationDetails, error) {
-	var appDetails schema.ApplicationDetails
+func GetJobApplications(ctx context.Context, jobListingID int) ([]schema.ApplicationDetails, error) {
+	var applications []schema.ApplicationDetails
 
 	// Fetch basic application and job seeker details
 	query := `
 	SELECT 
 	    a.id AS application_id, 
+	    js.id AS job_seeker_id,
 	    js.first_name, 
 	    js.last_name, 
 	    js.email, 
@@ -98,99 +99,117 @@ func GetJobApplications(ctx context.Context, applicationID int) (schema.Applicat
 	    a.cover_letter
 	FROM applications a
 	JOIN job_seekers js ON a.job_seeker_id = js.id
-	WHERE a.id = $1`
+	WHERE a.job_listing_id = $1`
 
-	err := config.DB.QueryRow(ctx, query, applicationID).Scan(
-		&appDetails.ApplicationID, &appDetails.FirstName, &appDetails.LastName, &appDetails.Email,
-		&appDetails.PhoneNumber, &appDetails.Resume, &appDetails.AppliedDate, &appDetails.CoverLetter,
-	)
+	rows, err := config.DB.Query(ctx, query, jobListingID)
 	if err != nil {
-		return schema.ApplicationDetails{}, err
-	}
-
-	// Fetch education details
-	educationQuery := `
-	SELECT 
-	    education_level, 
-	    institution_name, 
-	    field_of_study, 
-	    start_year, 
-	    end_year, 
-	    grade
-	FROM education 
-	WHERE job_seeker_id = (
-		SELECT job_seeker_id FROM applications WHERE id = $1
-	)`
-
-	rows, err := config.DB.Query(ctx, educationQuery, applicationID)
-	if err != nil {
-		return schema.ApplicationDetails{}, err
+		return nil, err
 	}
 	defer rows.Close()
 
+	// Map to track job seeker IDs to avoid redundant queries
+	jobSeekerMap := make(map[int]*schema.ApplicationDetails)
+
 	for rows.Next() {
-		var edu schema.EducationDetails
-		if err := rows.Scan(&edu.Level, &edu.Institution, &edu.FieldOfStudy, &edu.StartYear, &edu.EndYear, &edu.Grade); err != nil {
-			return schema.ApplicationDetails{}, err
-		}
-		appDetails.Education = append(appDetails.Education, edu)
-	}
+		var app schema.ApplicationDetails
+		var jobSeekerID int
 
-	// Fetch experience details
-	experienceQuery := `
-	SELECT 
-	    job_title, 
-	    company_name, 
-	    location, 
-	    start_date, 
-	    end_date
-	FROM experience 
-	WHERE job_seeker_id = (
-		SELECT job_seeker_id FROM applications WHERE id = $1
-	)`
-
-	expRows, err := config.DB.Query(ctx, experienceQuery, applicationID)
-	if err != nil {
-		return schema.ApplicationDetails{}, err
-	}
-	defer expRows.Close()
-
-	for expRows.Next() {
-		var exp schema.ExperienceDetails
-		var endDate *time.Time
-
-		if err := expRows.Scan(&exp.JobTitle, &exp.Company, &exp.Location, &exp.StartDate, &endDate); err != nil {
-			return schema.ApplicationDetails{}, err
+		err := rows.Scan(
+			&app.ApplicationID, &jobSeekerID, &app.FirstName, &app.LastName, &app.Email,
+			&app.PhoneNumber, &app.Resume, &app.AppliedDate, &app.CoverLetter,
+		)
+		if err != nil {
+			return nil, err
 		}
 
-		exp.EndDate = endDate
-		appDetails.Experience = append(appDetails.Experience, exp)
+		// Add the application to the map
+		jobSeekerMap[jobSeekerID] = &app
+		applications = append(applications, app)
 	}
 
-	// Fetch skills
-	skillsQuery := `
-	SELECT skill_name 
-	FROM job_seeker_skills 
-	WHERE job_seeker_id = (
-		SELECT job_seeker_id FROM applications WHERE id = $1
-	)`
+	// Iterate over the applications and fetch education, experience, and skills
+	for i := range applications {
+		jobSeekerID := applications[i].ApplicationID
 
-	skillRows, err := config.DB.Query(ctx, skillsQuery, applicationID)
-	if err != nil {
-		return schema.ApplicationDetails{}, err
-	}
-	defer skillRows.Close()
+		// Fetch education details
+		educationQuery := `
+		SELECT 
+		    education_level, 
+		    institution_name, 
+		    field_of_study, 
+		    start_year, 
+		    end_year, 
+		    grade
+		FROM education 
+		WHERE job_seeker_id = $1`
 
-	for skillRows.Next() {
-		var skill string
-		if err := skillRows.Scan(&skill); err != nil {
-			return schema.ApplicationDetails{}, err
+		eduRows, err := config.DB.Query(ctx, educationQuery, jobSeekerID)
+		if err != nil {
+			return nil, err
 		}
-		appDetails.Skills = append(appDetails.Skills, skill)
+		defer eduRows.Close()
+
+		for eduRows.Next() {
+			var edu schema.EducationDetails
+			if err := eduRows.Scan(&edu.Level, &edu.Institution, &edu.FieldOfStudy, &edu.StartYear, &edu.EndYear, &edu.Grade); err != nil {
+				return nil, err
+			}
+			applications[i].Education = append(applications[i].Education, edu)
+		}
+
+		// Fetch experience details
+		experienceQuery := `
+		SELECT 
+		    job_title, 
+		    company_name, 
+		    location, 
+		    start_date, 
+		    end_date
+		FROM experience 
+		WHERE job_seeker_id = $1`
+
+		expRows, err := config.DB.Query(ctx, experienceQuery, jobSeekerID)
+		if err != nil {
+			return nil, err
+		}
+		defer expRows.Close()
+
+		for expRows.Next() {
+			var exp schema.ExperienceDetails
+			var endDate *time.Time
+
+			if err := expRows.Scan(&exp.JobTitle, &exp.Company, &exp.Location, &exp.StartDate, &endDate); err != nil {
+				return nil, err
+			}
+
+			exp.EndDate = endDate
+			applications[i].Experience = append(applications[i].Experience, exp)
+		}
+
+		// Fetch skills
+		skillsQuery := `
+		SELECT skill_name 
+		FROM job_seeker_skills 
+		WHERE job_seeker_id = $1`
+
+		skillRows, err := config.DB.Query(ctx, skillsQuery, jobSeekerID)
+		if err != nil {
+			return nil, err
+		}
+		defer skillRows.Close()
+
+		for skillRows.Next() {
+			var skill string
+			if err := skillRows.Scan(&skill); err != nil {
+				return nil, err
+			}
+			applications[i].Skills = append(applications[i].Skills, skill)
+		}
 	}
 
-	return appDetails, nil
+	return applications, nil
 }
+
 
 
 func GetApplication(ctx context.Context, applicationID int) (schema.Application, error) {

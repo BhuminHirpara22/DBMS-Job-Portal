@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSearch, FaMapMarkerAlt, FaBriefcase, FaClock, FaMoneyBillWave, FaBuilding, FaFilter } from "react-icons/fa";
+import {
+  FaSearch,
+  FaMapMarkerAlt,
+  FaBriefcase,
+  FaClock,
+  FaMoneyBillWave,
+  FaBuilding,
+  FaFilter,
+} from "react-icons/fa";
 
 const JobListings = () => {
   const navigate = useNavigate();
@@ -19,35 +27,44 @@ const JobListings = () => {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/job_seeker/jobs`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `job-seeker-token`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/job_seeker/jobs`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `job-seeker-token`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-
       const data = await response.json();
-      
-      // Check if data is in the expected format
-      if (data && Array.isArray(data.jobs)) {
-        setJobs(data.jobs);
-      } else if (Array.isArray(data)) {
-        setJobs(data);
-      } else {
-        console.error("Unexpected API response format:", data);
-        throw new Error("Invalid response format from server");
+
+      // Handle null or empty response
+      if (!data) {
+        setJobs([]);
+        setError(null);
+        return;
       }
+
+      // Handle different response formats
+      const jobsData = Array.isArray(data.jobs) ? data.jobs : 
+                      Array.isArray(data) ? data : [];
       
+      setJobs(jobsData);
       setError(null);
     } catch (error) {
       console.error("Error fetching jobs:", error);
-      setError(error.message || "Failed to load jobs. Please try again later.");
+      // Only set error if it's not a 404 (no jobs found)
+      if (error.response?.status !== 404) {
+        setError(error.message || "Failed to load jobs. Please try again later.");
+      } else {
+        setError(null);
+      }
       setJobs([]);
     } finally {
       setLoading(false);
@@ -58,7 +75,8 @@ const JobListings = () => {
     (job) =>
       job.job_title.toLowerCase().includes(search.toLowerCase()) &&
       job.location.toLowerCase().includes(location.toLowerCase()) &&
-      (category === "" || job.job_category.toLowerCase() === category.toLowerCase())
+      (category === "" ||
+        job.job_category.toLowerCase() === category.toLowerCase())
   );
 
   return (
@@ -66,10 +84,14 @@ const JobListings = () => {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto text-center mb-8 sm:mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 md:mb-6">
-          Find Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Dream Job</span>
+          Find Your{" "}
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+            Dream Job
+          </span>
         </h1>
         <p className="text-sm sm:text-base md:text-lg text-gray-400 max-w-2xl mx-auto px-4">
-          Discover thousands of job opportunities from top companies and employers
+          Discover thousands of job opportunities from top companies and
+          employers
         </p>
       </div>
 
@@ -136,13 +158,15 @@ const JobListings = () => {
               <FaFilter className="text-blue-400" />
               <span>Filters</span>
               <span className="ml-auto text-xs text-gray-400">
-                {showFilters ? 'Hide' : 'Show'}
+                {showFilters ? "Hide" : "Show"}
               </span>
             </button>
 
-            <div className={`grid grid-cols-1 gap-3 transition-all duration-300 ${
-              showFilters ? 'opacity-100 max-h-[500px]' : 'opacity-0 max-h-0'
-            }`}>
+            <div
+              className={`grid grid-cols-1 gap-3 transition-all duration-300 ${
+                showFilters ? "opacity-100 max-h-[500px]" : "opacity-0 max-h-0"
+              }`}
+            >
               <div className="relative">
                 <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
@@ -205,7 +229,9 @@ const JobListings = () => {
                       </h2>
                       <div className="flex items-center text-gray-400 mt-1">
                         <FaBuilding className="mr-2 flex-shrink-0" />
-                        <span className="truncate text-sm sm:text-base">{job.company_name}</span>
+                        <span className="truncate text-sm sm:text-base">
+                          {job.company_name}
+                        </span>
                       </div>
                     </div>
                     <span className="px-2 sm:px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
@@ -220,11 +246,15 @@ const JobListings = () => {
                     </div>
                     <div className="flex items-center text-gray-400 text-sm sm:text-base">
                       <FaClock className="mr-2" />
-                      <span>Posted {new Date(job.posted_date).toLocaleDateString()}</span>
+                      <span>
+                        Posted {new Date(job.posted_date).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex items-center text-gray-400 text-sm sm:text-base">
                       <FaMoneyBillWave className="mr-2" />
-                      <span>${job.min_salary} - ${job.max_salary} USD</span>
+                      <span>
+                        ${job.min_salary} - ${job.max_salary} USD
+                      </span>
                     </div>
                   </div>
 
@@ -255,7 +285,12 @@ const JobListings = () => {
             ) : (
               <div className="col-span-full text-center py-8 sm:py-12">
                 <FaBriefcase className="text-4xl sm:text-6xl text-gray-700 mx-auto mb-3 sm:mb-4" />
-                <p className="text-gray-400 text-base sm:text-lg mb-4">No jobs found matching your criteria.</p>
+                <p className="text-gray-400 text-base sm:text-lg mb-2">
+                  Currently we cannot help you, we have 0 job listings right now
+                </p>
+                <p className="text-gray-500 text-sm sm:text-base mb-4">
+                  Please check back later for new opportunities
+                </p>
                 <button
                   onClick={() => {
                     setSearch("");

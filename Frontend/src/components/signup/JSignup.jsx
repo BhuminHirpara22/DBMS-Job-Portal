@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaTrash, FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaLinkedin, FaMapMarkerAlt, FaLock, FaGraduationCap, FaBriefcase } from "react-icons/fa";
+import { FaPlus, FaTrash, FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaLinkedin, FaMapMarkerAlt, FaLock, FaGraduationCap, FaBriefcase, FaCode } from "react-icons/fa";
 
 export function JobSeekerSignup() {
   const [input, setInput] = useState({
@@ -15,6 +15,7 @@ export function JobSeekerSignup() {
     location: "",
     education: [],
     experience: [],
+    skills: [],
   });
 
   const [errors, setErrors] = useState({});
@@ -39,6 +40,18 @@ export function JobSeekerSignup() {
     if (!input.phone_number.trim()) newErrors.phone_number = "Phone number is required";
     if (!input.location.trim()) newErrors.location = "Location is required";
     
+    if (input.education.length > 0 && !validateEducationFields(input.education)) {
+      newErrors.education = "Please complete all education fields";
+    }
+
+    if (input.experience.length > 0 && !validateExperienceFields(input.experience)) {
+      newErrors.experience = "Please complete all experience fields";
+    }
+
+    if (input.skills.length > 0 && !validateSkillsFields(input.skills)) {
+      newErrors.skills = "Please complete all skill fields";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -57,18 +70,63 @@ export function JobSeekerSignup() {
 
     setIsLoading(true);
     const url = import.meta.env.VITE_API_URL + "/user/register/jobseeker";
+    
+    const submitData = {
+      ...input,
+      confirmPassword: undefined,
+      education: input.education.length > 0 ? input.education : undefined,
+      experience: input.experience.length > 0 ? input.experience : undefined,
+      skills: input.skills.length > 0 ? input.skills : undefined,
+    };
+
     try {
-      const response = await axios.post(url, input);
-      navigate("/login/jobseeker");
-    } catch (e) {
-      console.log(e);
-      setErrors({ submit: "Registration failed. Please try again." });
+      const response = await axios.post(url, submitData);
+      if (response.data.success) {
+        navigate("/login/jobseeker");
+      } else {
+        setErrors({ submit: response.data.message || "Registration failed. Please try again." });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      setErrors({ 
+        submit: error.response?.data?.message || "Registration failed. Please try again." 
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const validateEducationFields = (education) => {
+    return education.every(edu => 
+      edu.education_level && 
+      edu.institution_name && 
+      edu.field_of_study && 
+      edu.start_year && 
+      edu.end_year && 
+      edu.grade
+    );
+  };
+
+  const validateExperienceFields = (experience) => {
+    return experience.every(exp => 
+      exp.job_title && 
+      exp.company_name && 
+      exp.location && 
+      exp.start_date && 
+      exp.end_date
+    );
+  };
+
+  const validateSkillsFields = (skills) => {
+    return skills.every(skill => skill.name && skill.level);
+  };
+
   const addEducation = () => {
+    if (input.education.length > 0 && !validateEducationFields(input.education)) {
+      setErrors({ ...errors, education: "Please fill all fields before adding new education" });
+      return;
+    }
+    setErrors({ ...errors, education: "" });
     setInput({
       ...input,
       education: [
@@ -91,6 +149,11 @@ export function JobSeekerSignup() {
   };
 
   const addExperience = () => {
+    if (input.experience.length > 0 && !validateExperienceFields(input.experience)) {
+      setErrors({ ...errors, experience: "Please fill all fields before adding new experience" });
+      return;
+    }
+    setErrors({ ...errors, experience: "" });
     setInput({
       ...input,
       experience: [
@@ -109,6 +172,29 @@ export function JobSeekerSignup() {
   const removeExperience = (index) => {
     const newExperience = input.experience.filter((_, i) => i !== index);
     setInput({ ...input, experience: newExperience });
+  };
+
+  const addSkill = () => {
+    if (input.skills.length > 0 && !validateSkillsFields(input.skills)) {
+      setErrors({ ...errors, skills: "Please fill all fields before adding new skill" });
+      return;
+    }
+    setErrors({ ...errors, skills: "" });
+    setInput({
+      ...input,
+      skills: [
+        ...input.skills,
+        {
+          name: "",
+          level: "",
+        },
+      ],
+    });
+  };
+
+  const removeSkill = (index) => {
+    const newSkills = input.skills.filter((_, i) => i !== index);
+    setInput({ ...input, skills: newSkills });
   };
 
   return (
@@ -438,6 +524,89 @@ export function JobSeekerSignup() {
                 </div>
               ))}
             </div>
+
+            {/* Skills Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <FaCode className="text-blue-500" />
+                  Skills
+                </h3>
+                <button
+                  type="button"
+                  onClick={addSkill}
+                  className="text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors duration-300"
+                >
+                  <FaPlus /> Add Skill
+                </button>
+              </div>
+
+              {errors.skills && (
+                <p className="text-sm text-red-400">{errors.skills}</p>
+              )}
+
+              {input.skills.map((skill, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-700/30 p-4 rounded-lg border border-gray-600"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-300 text-sm font-medium mb-1">
+                        Skill Name
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full p-2 bg-gray-700/50 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        value={skill.name}
+                        onChange={(e) => {
+                          let newSkills = [...input.skills];
+                          newSkills[index].name = e.target.value;
+                          setInput({ ...input, skills: newSkills });
+                        }}
+                        placeholder="e.g., JavaScript, Python"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-300 text-sm font-medium mb-1">
+                        Proficiency Level
+                      </label>
+                      <select
+                        className="w-full p-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        value={skill.level}
+                        onChange={(e) => {
+                          let newSkills = [...input.skills];
+                          newSkills[index].level = e.target.value;
+                          setInput({ ...input, skills: newSkills });
+                        }}
+                        required
+                      >
+                        <option value="">Select Level</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                        <option value="Expert">Expert</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(index)}
+                    className="mt-2 text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors duration-300"
+                  >
+                    <FaTrash /> Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {errors.education && (
+              <p className="text-sm text-red-400">{errors.education}</p>
+            )}
+            {errors.experience && (
+              <p className="text-sm text-red-400">{errors.experience}</p>
+            )}
 
             <button
               type="submit"

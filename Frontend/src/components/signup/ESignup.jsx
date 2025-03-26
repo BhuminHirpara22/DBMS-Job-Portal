@@ -1,36 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaArrowLeft, FaBuilding, FaUser, FaEnvelope, FaPhone, FaGlobe, FaMapMarkerAlt, FaLock, FaBriefcase } from "react-icons/fa";
+import { FaArrowLeft, FaBuilding, FaUser, FaEnvelope, FaPhone, FaLock } from "react-icons/fa";
 
 export function EmployerSignup() {
   const [input, setInput] = useState({
-    company_name: "",
+    company_id: "",
     contact_person: "",
     email: "",
     contact_number: "",
-    website: "",
-    location: "",
-    description: "",
     password: "",
     confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   const navigate = useNavigate();
+
+  // Fetch companies from backend
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await axios.get(import.meta.env.VITE_API_URL + "/company/get_companies");
+        if (response.status === 200) {
+          setCompanies(response.data.companies);
+        }
+      } catch (error) {
+        console.error("Error fetching companies:", error);
+        setErrors({ companies: "Failed to load companies. Please try again." });
+      } finally {
+        setIsLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
     
-    if (!input.company_name.trim()) newErrors.company_name = "Company name is required";
+    if (!input.company_id) newErrors.company_id = "Company selection is required";
     if (!input.contact_person.trim()) newErrors.contact_person = "Contact person name is required";
     if (!input.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(input.email)) newErrors.email = "Invalid email format";
     
     if (!input.contact_number.trim()) newErrors.contact_number = "Contact number is required";
-    if (!input.location.trim()) newErrors.location = "Location is required";
-    if (!input.description.trim()) newErrors.description = "Company description is required";
     
     if (!input.password) newErrors.password = "Password is required";
     else if (input.password.length < 8) newErrors.password = "Password must be at least 8 characters";
@@ -58,11 +74,18 @@ export function EmployerSignup() {
     setIsLoading(true);
     const url = import.meta.env.VITE_API_URL + "/user/register/employer";
     try {
+      console.log(input);
       const response = await axios.post(url, input);
-      navigate("/login/employer");
-    } catch (e) {
-      console.log(e);
-      setErrors({ submit: "Registration failed. Please try again." });
+      if (response.data.success) {
+        navigate("/login/employer");
+      } else {
+        setErrors({ submit: response.data.message || "Registration failed. Please try again." });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      setErrors({ 
+        submit: error.response?.data?.message || "Registration failed. Please try again." 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -99,24 +122,52 @@ export function EmployerSignup() {
                 <label className="block text-gray-300 text-sm font-medium mb-2">
                   Company Name
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaBuilding className="text-gray-400" />
+                    <FaBuilding className="text-gray-400 group-hover:text-blue-500 transition-colors" />
                   </div>
-                  <input
-                    type="text"
-                    name="company_name"
-                    value={input.company_name}
+                  <select
+                    name="company_id"
+                    value={input.company_id}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
-                      errors.company_name ? 'border-red-500' : 'border-gray-600'
-                    } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
-                    placeholder="Enter company name"
+                    className={`w-full pl-10 pr-10 py-3 bg-gray-700/50 border ${
+                      errors.company_id ? 'border-red-500' : 'border-gray-600'
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 appearance-none cursor-pointer hover:border-blue-500/50 group-hover:border-blue-500/50`}
                     required
-                  />
+                    disabled={isLoadingCompanies}
+                  >
+                    <option value="" className="bg-gray-800 text-gray-400">Select Company</option>
+                    {companies && companies.map((company) => (
+                      <option 
+                        key={company.id} 
+                        value={company.id}
+                        className="bg-gray-800 text-white py-2"
+                      >
+                        {company.company_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <svg 
+                      className={`w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors transform group-hover:rotate-180 duration-300`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {isLoadingCompanies && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
                 </div>
-                {errors.company_name && (
-                  <p className="mt-1 text-sm text-red-400">{errors.company_name}</p>
+                {errors.company_id && (
+                  <p className="mt-1 text-sm text-red-400">{errors.company_id}</p>
+                )}
+                {errors.companies && (
+                  <p className="mt-1 text-sm text-red-400">{errors.companies}</p>
                 )}
               </div>
 
@@ -192,75 +243,6 @@ export function EmployerSignup() {
                 </div>
                 {errors.contact_number && (
                   <p className="mt-1 text-sm text-red-400">{errors.contact_number}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Website
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaGlobe className="text-gray-400" />
-                  </div>
-                  <input
-                    type="url"
-                    name="website"
-                    value={input.website}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    placeholder="Enter company website"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Location
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="location"
-                    value={input.location}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
-                      errors.location ? 'border-red-500' : 'border-gray-600'
-                    } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
-                    placeholder="Enter company location"
-                    required
-                  />
-                </div>
-                {errors.location && (
-                  <p className="mt-1 text-sm text-red-400">{errors.location}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Company Description
-                </label>
-                <div className="relative">
-                  <div className="absolute top-3 left-3 pointer-events-none">
-                    <FaBriefcase className="text-gray-400" />
-                  </div>
-                  <textarea
-                    name="description"
-                    value={input.description}
-                    onChange={handleChange}
-                    rows="4"
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
-                      errors.description ? 'border-red-500' : 'border-gray-600'
-                    } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
-                    placeholder="Describe your company"
-                    required
-                  />
-                </div>
-                {errors.description && (
-                  <p className="mt-1 text-sm text-red-400">{errors.description}</p>
                 )}
               </div>
 

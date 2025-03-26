@@ -48,7 +48,7 @@ const Navbar = () => {
   // Job Seeker Navigation Items
   const seekerNavItems = [
     { to: "/jobs", label: "Find Jobs", icon: <FaBriefcase /> },
-    { to: "/applications", label: "My Applications", icon: <FaFileAlt /> },
+    { to: "/applied-jobs", label: "My Applications", icon: <FaFileAlt /> },
     { to: "/jobseeker/profile", label: "Profile", icon: <FaUser /> },
     { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
   ];

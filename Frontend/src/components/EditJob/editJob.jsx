@@ -43,27 +43,40 @@ const EditJob = () => {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to fetch job details");
+      if (!response.ok) {
+        throw new Error("Failed to fetch job details");
+      }
 
       const data = await response.json();
+      if (!data) {
+        setJob(null);
+        setError("Job not found");
+        return;
+      }
+
       setJob(data);
       setFormData({
-        job_title: data.job_title,
-        company_name: data.company_name,
-        location: data.location,
-        job_type: data.job_type,
-        min_salary: data.min_salary,
-        max_salary: data.max_salary,
-        description: data.description,
+        job_title: data.job_title || "",
+        company_name: data.company_name || "",
+        location: data.location || "",
+        job_type: data.job_type || "",
+        min_salary: data.min_salary || "",
+        max_salary: data.max_salary || "",
+        description: data.description || "",
         Requirements: data.Requirements || [],
-        expiry_date: data.expiry_date.split("T")[0],
-        status: data.status,
-        job_category: data.job_category,
+        expiry_date: data.expiry_date ? data.expiry_date.split("T")[0] : "",
+        status: data.status || "",
+        job_category: data.job_category || "",
       });
       setError(null);
     } catch (error) {
       console.error("Error fetching job details:", error);
-      setError("Failed to load job details.");
+      if (error.response?.status !== 404) {
+        setError("Failed to load job details.");
+      } else {
+        setError("Job not found");
+      }
+      setJob(null);
     } finally {
       setLoading(false);
     }

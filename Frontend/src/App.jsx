@@ -20,6 +20,9 @@ import Logout from "./components/Logout/Logout";
 import EmployerProfile from "./components/Profile/EmployerProfile";
 import JobSeekerProfile from "./components/Profile/JobSeekerProfile";
 import AppliedJobs from "./components/Apply/AppliedJobs";
+import { CreateCompany } from "./components/signup/CreateCompany";
+import EmployerJobs from "./components/EmployerJobDetails/EmployerJobs";
+import Notifications from "./components/Notifications/Notifications";
 
 
 const router = createBrowserRouter([
@@ -46,6 +49,10 @@ const router = createBrowserRouter([
   {
     path: "/signup/employer",
     element: <EmployerSignup />,
+  },
+  {
+    path: "/create-company",
+    element: <CreateCompany />,
   },
   {
     path: "/",
@@ -98,7 +105,14 @@ const router = createBrowserRouter([
         path: "/applied-jobs",
         element: <ProtectedRoute component={AppliedJobs} />,
       },
-
+      {
+        path: "/employer/jobs",
+        element: <ProtectedRoute component={EmployerJobs} />,
+      },
+      {
+        path: "/notifications",
+        element: <ProtectedRoute component={Notifications} />,
+      },
     ],
   },
   {

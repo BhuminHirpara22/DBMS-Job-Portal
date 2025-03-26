@@ -4,44 +4,121 @@ import (
 	"Backend/config"
 	"Backend/internal/schema"
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
-	// "fmt"
+	"fmt"
+	"strconv"
+
+	"github.com/lib/pq"
 )
 
 func RegisterJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (int, error) {
-	query := `SELECT signup_job_seeker($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	fmt.Printf("Starting job seeker registration for email: %s\n", jobSeeker.Email)
+
+	// Convert education to JSONB
+	var educationJSON []byte
+	if len(jobSeeker.Education) > 0 {
+		var err error
+		educationJSON, err = json.Marshal(jobSeeker.Education)
+		if err != nil {
+			fmt.Printf("Error marshaling education: %v\n", err)
+			return 0, fmt.Errorf("error marshaling education: %v", err)
+		}
+		fmt.Printf("Education JSON: %s\n", string(educationJSON))
+	}
+
+	// Convert experience to JSONB
+	var experienceJSON []byte
+	if len(jobSeeker.Experience) > 0 {
+		var err error
+		experienceJSON, err = json.Marshal(jobSeeker.Experience)
+		if err != nil {
+			fmt.Printf("Error marshaling experience: %v\n", err)
+			return 0, fmt.Errorf("error marshaling experience: %v", err)
+		}
+		fmt.Printf("Experience JSON: %s\n", string(experienceJSON))
+	}
+
+	// Convert skills and levels to arrays if present
+	var skills []string
+	var skillLevels []string
+	if len(jobSeeker.Skills) > 0 {
+		skills = make([]string, len(jobSeeker.Skills))
+		skillLevels = make([]string, len(jobSeeker.Skills))
+		for i, skill := range jobSeeker.Skills {
+			skills[i] = skill.SkillName
+			skillLevels[i] = skill.SkillProficiency
+		}
+		fmt.Printf("Skills: %v\n", skills)
+		fmt.Printf("Skill Levels: %v\n", skillLevels)
+	}
+
+	// Call the signup_job_seeker stored procedure
+	query := `
+        SELECT signup_job_seeker(
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+        )
+    `
+
 	var jobSeekerID int
-	err := config.DB.QueryRow(ctx, query, jobSeeker.FirstName, jobSeeker.LastName, jobSeeker.Email, jobSeeker.Password, jobSeeker.Location, jobSeeker.PhoneNumber, jobSeeker.LinkedinURL, jobSeeker.Resume, jobSeeker.ProfilePicture).Scan(&jobSeekerID)
+	err := config.DB.QueryRow(ctx, query,
+		jobSeeker.FirstName,
+		jobSeeker.LastName,
+		jobSeeker.Email,
+		jobSeeker.Password,
+		jobSeeker.Location,
+		jobSeeker.PhoneNumber,
+		jobSeeker.LinkedinURL,
+		jobSeeker.Resume,
+		jobSeeker.ProfilePicture,
+		educationJSON,
+		experienceJSON,
+		pq.Array(skills),
+		pq.Array(skillLevels),
+	).Scan(&jobSeekerID)
+
 	if err != nil {
-		return 0, err
+		fmt.Printf("Database error: %v\n", err)
+		return 0, fmt.Errorf("error registering job seeker: %v", err)
 	}
 	return jobSeekerID, nil
 }
 
-// RegisterEmployer registers a new employer
-func RegisterEmployer(ctx context.Context, employer schema.Employer) (int, error) {
+// RegisterEmployer registers a new employer and creates their company profile
+func RegisterEmployer(ctx context.Context, employer schema.InputEmployer) (int, error) {
+	fmt.Printf("Starting employer registration for email: %s, company ID: %s\n", employer.Email, employer.CompanyID)
+
+	// Convert company_id string to int
+	companyID, err := strconv.Atoi(employer.CompanyID)
+	if err != nil {
+		fmt.Printf("Error converting company ID: %v\n", err)
+		return 0, fmt.Errorf("invalid company ID: %v", err)
+	}
+
+	// Call the signup_employer stored procedure
 	query := `
-        INSERT INTO employers (
-            companyid, email, password, description, contact_person, contact_number
-        ) VALUES (
-            $1, $2, $3, $4, $5, $6
-        )
-        RETURNING id
-    `
-	var id int
-	err := config.DB.QueryRow(ctx, query,
-		employer.CompanyID,
+		SELECT signup_employer(
+			$1, $2, $3, $4, $5
+		)
+	`
+
+	var employerID int
+	err = config.DB.QueryRow(ctx, query,
+		companyID,
 		employer.Email,
 		employer.Password,
-		employer.Description,
 		employer.ContactPerson,
 		employer.ContactNumber,
-	).Scan(&id)
+	).Scan(&employerID)
 
 	if err != nil {
-		return 0, err
+		fmt.Printf("Error registering employer: %v\n", err)
+		return 0, fmt.Errorf("error registering employer: %v", err)
 	}
-	return id, nil
+
+	fmt.Printf("Successfully created employer account with ID: %d\n", employerID)
+	return employerID, nil
 }
 
 // GetJobSeekerByEmail gets a job seeker by email
@@ -71,11 +148,23 @@ func GetJobSeeker(ctx context.Context, id int) (schema.JobSeeker, error) {
 	return jobSeeker, nil
 }
 
-// GetEmployerByEmail gets an employer by email
+// GetEmployer gets an employer by ID with their company information
 func GetEmployer(ctx context.Context, id int) (schema.Employer, error) {
 	query := `
-		SELECT id, companyid, email, password, description, contact_person, contact_number 
-		FROM employers WHERE id = $1
+		SELECT 
+			e.id, 
+			e.companyid, 
+			e.email, 
+			e.password, 
+			e.description, 
+			e.contact_person, 
+			e.contact_number,
+			c.company_name,
+			c.industry,
+			c.website
+		FROM employers e
+		JOIN company c ON e.companyid = c.id
+		WHERE e.id = $1
 	`
 	var employer schema.Employer
 
@@ -87,10 +176,16 @@ func GetEmployer(ctx context.Context, id int) (schema.Employer, error) {
 		&employer.Description,
 		&employer.ContactPerson,
 		&employer.ContactNumber,
+		&employer.CompanyName,
+		&employer.Industry,
+		&employer.Website,
 	)
 
 	if err != nil {
-		return schema.Employer{}, err
+		if err == sql.ErrNoRows {
+			return schema.Employer{}, fmt.Errorf("employer with ID %d not found", id)
+		}
+		return schema.Employer{}, fmt.Errorf("error fetching employer: %v", err)
 	}
 
 	return employer, nil
@@ -158,7 +253,7 @@ func ValidateEmployerCredentials(ctx context.Context, email, password string) (s
 }
 
 // UpdateJobSeeker updates an existing job seeker record.
-func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (schema.JobSeeker, error) {
+func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) error {
 	query := `
 		UPDATE job_seekers 
 		SET first_name = $1,
@@ -170,11 +265,8 @@ func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (schema.Jo
 			phone_number = $7,
 			linkedin_url = $8
 		WHERE id = $9
-		RETURNING id, first_name, last_name, email, location, profile_picture, phone_number, linkedin_url
 	`
-
-	var updatedProfile schema.JobSeeker
-	err := config.DB.QueryRow(ctx, query,
+	_, err := config.DB.Exec(ctx, query,
 		jobSeeker.FirstName,
 		jobSeeker.LastName,
 		jobSeeker.Email,
@@ -184,24 +276,9 @@ func UpdateJobSeeker(ctx context.Context, jobSeeker schema.JobSeeker) (schema.Jo
 		jobSeeker.PhoneNumber,
 		jobSeeker.LinkedinURL,
 		jobSeeker.ID,
-	).Scan(
-		&updatedProfile.ID,
-		&updatedProfile.FirstName,
-		&updatedProfile.LastName,
-		&updatedProfile.Email,
-		&updatedProfile.Location,
-		&updatedProfile.ProfilePicture,
-		&updatedProfile.PhoneNumber,
-		&updatedProfile.LinkedinURL,
 	)
-
-	if err != nil {
-		return schema.JobSeeker{}, err
-	}
-
-	return updatedProfile, nil
+	return err
 }
-
 
 // UpdateEmployer updates an existing employer record.
 func UpdateEmployer(ctx context.Context, employer schema.Employer) error {
@@ -243,14 +320,4 @@ func DeleteEmployer(ctx context.Context, userID int) error {
 
 	_, err := config.DB.Exec(ctx, query, userID)
 	return err
-}
-
-func GetCompanyId(ctx context.Context, CompanyName string) (int, error) {
-	query := "SELECT id FROM company WHERE company_name = $1"
-	var companyID int
-	err := config.DB.QueryRow(ctx, query, CompanyName).Scan(&companyID)
-	if err != nil {
-		return 0, err
-	}
-	return companyID, nil
 }

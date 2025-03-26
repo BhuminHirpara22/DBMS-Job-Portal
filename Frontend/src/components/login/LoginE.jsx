@@ -129,7 +129,7 @@ export function LoginE() {
                 onClick={() => navigate("/role")}
                 className="text-blue-400 hover:text-blue-300 transition-colors duration-300"
               >
-                Register your company
+                Register here
               </button>
             </p>
           </div>

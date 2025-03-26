@@ -30,14 +30,26 @@ const EmployerJob = () => {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to fetch job details");
+      if (!response.ok) {
+        throw new Error("Failed to fetch job details");
+      }
 
       const data = await response.json();
+      if (!data) {
+        setJob(null);
+        setError("Job not found");
+        return;
+      }
       setJob(data);
       setError(null);
     } catch (error) {
       console.error("Error fetching job details:", error);
-      setError("Failed to load job details.");
+      if (error.response?.status !== 404) {
+        setError("Failed to load job details.");
+      } else {
+        setError("Job not found");
+      }
+      setJob(null);
     } finally {
       setLoading(false);
     }
@@ -56,12 +68,19 @@ const EmployerJob = () => {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to fetch applications");
+      if (!response.ok) {
+        throw new Error("Failed to fetch applications");
+      }
 
       const data = await response.json();
-      setApplications(data);
+      const applicationsData = data || [];
+      setApplications(applicationsData);
     } catch (error) {
       console.error("Error fetching applications:", error);
+      if (error.response?.status !== 404) {
+        console.error("Failed to load applications");
+      }
+      setApplications([]);
     }
   };
 

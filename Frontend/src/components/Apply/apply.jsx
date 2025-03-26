@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getToken } from "../../../tokenUtils";
 import { FaBriefcase, FaMapMarkerAlt, FaClock, FaMoneyBillWave, FaBuilding, FaCheckCircle, FaArrowLeft, FaGraduationCap, FaUsers, FaChartLine, FaHourglassHalf } from "react-icons/fa";
+import toast, { Toaster } from 'react-hot-toast';
 
 const Apply = () => {
   const { jobId } = useParams();
@@ -21,13 +22,25 @@ const Apply = () => {
     try {
       setLoading(true);
       const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs/${jobId}`);
-      if (!response.ok) throw new Error("Failed to fetch job details");
+      if (!response.ok) {
+        throw new Error("Failed to fetch job details");
+      }
       const data = await response.json();
+      if (!data) {
+        setJob(null);
+        setError("Job not found");
+        return;
+      }
       setJob(data);
       setError(null);
     } catch (error) {
       console.error("Error fetching job details:", error);
-      setError("Failed to load job details. Please try again.");
+      if (error.response?.status !== 404) {
+        setError("Failed to load job details. Please try again.");
+      } else {
+        setError("Job not found");
+      }
+      setJob(null);
     } finally {
       setLoading(false);
     }
@@ -36,12 +49,19 @@ const Apply = () => {
   const fetchOtherJobs = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs`);
-      if (!response.ok) throw new Error("Failed to fetch other jobs");
+      if (!response.ok) {
+        throw new Error("Failed to fetch other jobs");
+      }
       const data = await response.json();
-      const filteredJobs = data.filter((job) => job.id !== Number(jobId));
+      const jobsData = data || [];
+      const filteredJobs = jobsData.filter((job) => job.id !== Number(jobId));
       setOtherJobs(filteredJobs);
     } catch (error) {
       console.error("Error fetching other jobs:", error);
+      if (error.response?.status !== 404) {
+        console.error("Failed to load other jobs");
+      }
+      setOtherJobs([]);
     }
   };
 
@@ -51,8 +71,8 @@ const Apply = () => {
     try {
       const token = getToken();
       if (!token) {
-        alert("You must be logged in to apply.");
-        navigate("/login");
+        toast.error("You must be logged in to apply.");
+        navigate("/");
         return;
       }
 
@@ -69,12 +89,23 @@ const Apply = () => {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to apply for job");
-      alert("Application submitted successfully!");
-      navigate("/job-seeker-dashboard");
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error && data.error.includes("already applied")) {
+          toast.error("You have already applied for this job!");
+          return;
+        }
+        throw new Error(data.error || "Failed to apply for job");
+      }
+
+      toast.success("Application submitted successfully!");
+      setTimeout(() => {
+        navigate("/mainpage");
+      }, 1500);
     } catch (error) {
       console.error("Error applying for job:", error);
-      alert("Error applying for job. Please try again.");
+      toast.error(error.message || "Error applying for job. Please try again.");
     }
   };
 
@@ -119,6 +150,29 @@ const Apply = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white pt-16 pb-8 px-4 sm:px-6 lg:px-8">
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1F2937',
+            color: '#fff',
+            border: '1px solid rgba(59, 130, 246, 0.2)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="max-w-[1600px] mx-auto">
         {/* Back Button */}
         <button

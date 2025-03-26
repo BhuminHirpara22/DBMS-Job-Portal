@@ -1,14 +1,15 @@
 package controller
 
 import (
+	"Backend/internal/db"
+	"Backend/internal/helpers" // Ensure this package provides HashPassword, CheckPassword, GenerateJWT, etc.
+	"Backend/internal/schema"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
-	"Backend/internal/db"
-	"Backend/internal/schema"
-	"Backend/internal/helpers" // Ensure this package provides HashPassword, CheckPassword, GenerateJWT, etc.
-	"fmt"
 )
 
 // ------------------------------
@@ -21,14 +22,26 @@ import (
 func RegisterJobSeeker(c *gin.Context) {
 	var newJobSeeker schema.JobSeeker
 	if err := c.ShouldBindJSON(&newJobSeeker); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// fmt.Printf("Error binding JSON: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid request data",
+			"error":   err.Error(),
+		})
 		return
 	}
+
+	// fmt.Printf("Received job seeker data: %+v\n", newJobSeeker)
 
 	// Hash the provided password for security.
 	hashedPassword, err := helpers.HashPassword(newJobSeeker.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
+		// fmt.Printf("Error hashing password: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Error processing password",
+			"error":   err.Error(),
+		})
 		return
 	}
 	newJobSeeker.Password = hashedPassword
@@ -36,54 +49,70 @@ func RegisterJobSeeker(c *gin.Context) {
 	// Insert the new job seeker into the database.
 	id, err := db.RegisterJobSeeker(context.Background(), newJobSeeker)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// fmt.Printf("Error registering job seeker: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Error registering job seeker",
+			"error":   err.Error(),
+		})
 		return
 	}
 
 	// Return a success response with the new user's ID.
-	c.JSON(http.StatusCreated, gin.H{"message": "Job Seeker registered successfully", "id": id})
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Job Seeker registered successfully",
+		"id":      id,
+	})
 }
 
 // RegisterEmployer handles employer registration.
 // It follows a similar process as job seeker registration.
 func RegisterEmployer(c *gin.Context) {
 	var newEmployer schema.InputEmployer
-	
-	if err := c.ShouldBindJSON(&newEmployer); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var employer schema.Employer
-	var err error
-	employer.Email=newEmployer.Email
-	employer.Password=newEmployer.Password
-	employer.ContactPerson=newEmployer.ContactPerson
-	employer.ContactNumber=newEmployer.ContactNumber
-	employer.Description=newEmployer.Description
-	employer.CompanyID, err =db.GetCompanyId(context.Background(),newEmployer.CompanyName)
 
-	
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Getting in company id"})
+	if err := c.ShouldBindJSON(&newEmployer); err != nil {
+		fmt.Printf("Error binding JSON: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid request data",
+			"error":   err.Error(),
+		})
 		return
 	}
+
+	fmt.Printf("Received employer data: %+v\n", newEmployer)
 
 	// Hash the provided password.
-	hashedPassword, err := helpers.HashPassword(employer.Password)
+	hashedPassword, err := helpers.HashPassword(newEmployer.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
+		fmt.Printf("Error hashing password: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Error processing password",
+			"error":   err.Error(),
+		})
 		return
 	}
-	employer.Password = hashedPassword
+	newEmployer.Password = hashedPassword
 
 	// Insert the new employer into the database.
-	id, err := db.RegisterEmployer(context.Background(), employer)
+	id, err := db.RegisterEmployer(context.Background(), newEmployer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Printf("Error registering employer: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Error registering employer",
+			"error":   err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Employer registered successfully", "id": id})
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Employer registered successfully",
+		"id":      id,
+	})
 }
 
 // ------------------------------
@@ -117,7 +146,6 @@ func SeekerLoginHandler(c *gin.Context) {
 	userID = jobSeeker.ID
 	firstName = jobSeeker.FirstName
 
-
 	// Return the login response with token and user details.
 	c.JSON(http.StatusOK, schema.LoginResponse{
 		UserID:    userID,
@@ -148,7 +176,6 @@ func EmployerLoginHandler(c *gin.Context) {
 		return
 	}
 	userID = employer.ID
-
 
 	// Return the login response with token and user details.
 	c.JSON(http.StatusOK, schema.LoginResponse{
@@ -208,18 +235,13 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 	}
 
 	var jobSeeker schema.JobSeeker
-	jobSeeker,err = db.GetJobSeeker(c, id)
-	var jobSeekerTemp schema.JobSeekerInput
-	if err := c.ShouldBindJSON(&jobSeekerTemp); err != nil {
+	if err := c.ShouldBindJSON(&jobSeeker); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Set the ID to ensure we update the correct record.
-	jobSeeker.FirstName = jobSeekerTemp.FirstName
-	jobSeeker.LastName = jobSeekerTemp.LastName
-	jobSeeker.PhoneNumber = jobSeekerTemp.PhoneNumber
-	
+	jobSeeker.ID = id
 
 	// If the password is provided for update, hash it.
 	if jobSeeker.Password != "" {
@@ -231,19 +253,14 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 		jobSeeker.Password = hashedPassword
 	}
 
-	// Update the job seeker and retrieve the updated profile
-	updatedProfile, err := db.UpdateJobSeeker(context.Background(), jobSeeker)
-	if err != nil {
+	// Call the DB function to update the job seeker record.
+	if err := db.UpdateJobSeeker(context.Background(), jobSeeker); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Job Seeker profile updated successfully",
-		"profile": updatedProfile,
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Job Seeker profile updated successfully"})
 }
-
 
 // UpdateEmployerProfile handles updating an employer's profile.
 // It follows the same pattern as the job seeker update.
@@ -318,8 +335,9 @@ func DeleteEmployerHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
+
 // LogoutHandler simply invalidates the token client-side.
 func LogoutHandler(c *gin.Context) {
-	// Invalidate token logic (on frontend) 
+	// Invalidate token logic (on frontend)
 	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
 }

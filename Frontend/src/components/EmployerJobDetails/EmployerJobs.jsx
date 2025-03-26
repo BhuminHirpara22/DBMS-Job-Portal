@@ -13,11 +13,14 @@ import {
   FaArrowRight,
   FaSearch,
   FaFilter,
-  FaSort
+  FaSort,
+  FaPlus,
+  FaEdit,
+  FaTrash
 } from 'react-icons/fa';
 
-const AppliedJobs = () => {
-  const [appliedJobs, setAppliedJobs] = useState([]);
+const EmployerJobs = () => {
+  const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,54 +37,53 @@ const AppliedJobs = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAppliedJobs = async () => {
+    const fetchEmployerJobs = async () => {
       try {
-        const jobSeekerID = getToken();
+        const employerID = getToken();
         
-        if (!jobSeekerID) {
-          navigate('/login/jobseeker');
+        if (!employerID) {
+          navigate('/login/employer');
           return;
         }
 
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/job_seeker/jobsApplied/${jobSeekerID}`, {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/employer/jobs?employer_id=${employerID}`, {
           headers: {
-            Authorization: `job-seeker-token`
+            Authorization: `employer-token`
           }
         });
 
         // Handle null or empty response
         const jobsData = response.data || [];
-        setAppliedJobs(jobsData);
+        setJobs(jobsData);
         setFilteredJobs(jobsData);
         setLoading(false);
         setError(null);
       } catch (err) {
-        console.error('Error fetching applied jobs:', err);
+        console.error('Error fetching employer jobs:', err);
         // Only set error if it's not a 404 (no jobs found)
         if (err.response?.status !== 404) {
-          setError(err.response?.data?.message || 'Failed to fetch applied jobs');
+          setError(err.response?.data?.message || 'Failed to fetch jobs');
         } else {
           setError(null);
         }
         // Initialize with empty arrays
-        setAppliedJobs([]);
+        setJobs([]);
         setFilteredJobs([]);
         setLoading(false);
       }
     };
 
-    fetchAppliedJobs();
+    fetchEmployerJobs();
   }, [navigate]);
 
   useEffect(() => {
-    if (!Array.isArray(appliedJobs)) {
+    if (!Array.isArray(jobs)) {
       setFilteredJobs([]);
       return;
     }
 
-    let filtered = appliedJobs.filter(job => 
+    let filtered = jobs.filter(job => 
       job?.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job?.location?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -99,20 +101,40 @@ const AppliedJobs = () => {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b?.applied_date || 0) - new Date(a?.applied_date || 0);
+          return new Date(b?.posted_date || 0) - new Date(a?.posted_date || 0);
         case 'oldest':
-          return new Date(a?.applied_date || 0) - new Date(b?.applied_date || 0);
-        case 'salary-high':
-          return (b?.max_salary || 0) - (a?.max_salary || 0);
-        case 'salary-low':
-          return (a?.min_salary || 0) - (b?.min_salary || 0);
+          return new Date(a?.posted_date || 0) - new Date(b?.posted_date || 0);
+        case 'applications-high':
+          return (b?.applicant_count || 0) - (a?.applicant_count || 0);
+        case 'applications-low':
+          return (a?.applicant_count || 0) - (b?.applicant_count || 0);
         default:
           return 0;
       }
     });
 
     setFilteredJobs(filtered);
-  }, [searchTerm, appliedJobs, statusFilter, jobTypeFilter, sortBy]);
+  }, [searchTerm, jobs, statusFilter, jobTypeFilter, sortBy]);
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+
+    try {
+      const employerID = getToken();
+      await axios.delete(`${import.meta.env.VITE_API_URL}/employer/jobs/${jobId}`, {
+        headers: {
+          Authorization: `employer-token`
+        }
+      });
+
+      // Update the jobs list after successful deletion
+      setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
+      setFilteredJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
+    } catch (err) {
+      console.error('Error deleting job:', err);
+      alert('Failed to delete job. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -122,7 +144,8 @@ const AppliedJobs = () => {
     );
   }
 
-  if (error) {
+  // Only show error state for actual errors, not for no jobs
+  if (error && error !== 'No jobs found') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center p-4">
         <p className="text-red-400 text-lg mb-4">{error}</p>
@@ -162,12 +185,25 @@ const AppliedJobs = () => {
         <div className="text-center mb-12 transform transition-all duration-500">
           <h1 className={`text-4xl sm:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 
                          transform transition-all duration-500 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-            My Applications
+            My Job Listings
           </h1>
           <p className={`text-gray-400 text-lg transform transition-all duration-500 delay-100 
                         ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-            Track and manage your job applications
+            Manage and track your job postings
           </p>
+        </div>
+
+        {/* Create New Job Button */}
+        <div className="mb-8 flex justify-center">
+          <button
+            onClick={() => navigate('/employer/create-job')}
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                     transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20
+                     flex items-center justify-center gap-2 group"
+          >
+            <FaPlus className="transform group-hover:rotate-90 transition-transform duration-300" />
+            Create New Job
+          </button>
         </div>
 
         {/* Search and Filter Section */}
@@ -176,7 +212,7 @@ const AppliedJobs = () => {
           <div className="relative group mb-4">
             <input
               type="text"
-              placeholder="Search jobs, companies, or locations..."
+              placeholder="Search jobs or locations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-3 pl-12 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl 
@@ -202,8 +238,8 @@ const AppliedJobs = () => {
               >
                 <option value="all">All Status</option>
                 <option value="Active">Active</option>
-                <option value="Pending">Pending</option>
-                <option value="Rejected">Rejected</option>
+                <option value="Closed">Closed</option>
+                <option value="Draft">Draft</option>
               </select>
               <FaFilter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 
                                  group-hover:text-blue-400 transition-colors duration-300 pointer-events-none" />
@@ -241,39 +277,62 @@ const AppliedJobs = () => {
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
-                <option value="salary-high">Salary: High to Low</option>
-                <option value="salary-low">Salary: Low to High</option>
+                <option value="applications-high">Most Applications</option>
+                <option value="applications-low">Least Applications</option>
               </select>
               <FaSort className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 
                                group-hover:text-blue-400 transition-colors duration-300 pointer-events-none" />
             </div>
           </div>
 
-          {/* Application Count Badge */}
+          {/* Job Count Badge */}
           <div className="mt-4 flex justify-center">
             <span className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-full text-sm border border-blue-500/30">
-              {Array.isArray(filteredJobs) ? filteredJobs.length : 0} {filteredJobs?.length === 1 ? 'Application' : 'Applications'} Found
+              {Array.isArray(filteredJobs) ? filteredJobs.length : 0} {filteredJobs?.length === 1 ? 'Job' : 'Jobs'} Found
             </span>
           </div>
         </div>
 
         {/* Job Listings */}
         <div className="space-y-6">
-          {filteredJobs.length === 0 ? (
+          {(!jobs || jobs.length === 0) ? (
             <div className={`text-center py-12 transform transition-all duration-500 delay-300 
                            ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
               <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl border border-gray-700/50 
                             transform hover:scale-105 transition-all duration-300">
                 <FaBriefcase className="mx-auto text-blue-400 text-5xl mb-4 animate-bounce" />
-                <p className="text-gray-400 text-lg mb-4">No applications found.</p>
+                <p className="text-gray-400 text-lg mb-2">Welcome to your Job Listings!</p>
+                <p className="text-gray-500 text-sm mb-4">Get started by creating your first job posting to attract talented candidates</p>
                 <button
-                  onClick={() => navigate('/jobs')}
+                  onClick={() => navigate('/employer/create-job')}
                   className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
                            transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20
                            flex items-center justify-center mx-auto gap-2"
                 >
-                  <FaBriefcase className="text-sm" />
-                  Browse Jobs
+                  <FaPlus className="text-sm" />
+                  Create Your First Job
+                </button>
+              </div>
+            </div>
+          ) : filteredJobs.length === 0 ? (
+            <div className={`text-center py-12 transform transition-all duration-500 delay-300 
+                           ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+              <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl border border-gray-700/50 
+                            transform hover:scale-105 transition-all duration-300">
+                <FaBriefcase className="mx-auto text-blue-400 text-5xl mb-4" />
+                <p className="text-gray-400 text-lg mb-4">No jobs match your search criteria.</p>
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('all');
+                    setJobTypeFilter('all');
+                    setSortBy('newest');
+                  }}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                           transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20
+                           flex items-center justify-center mx-auto gap-2"
+                >
+                  Clear Filters
                 </button>
               </div>
             </div>
@@ -287,12 +346,11 @@ const AppliedJobs = () => {
                     animation: `fadeInUp 0.5s ease-out ${index * 0.1}s forwards`
                   }}
                 >
-                  <div
+                  <div 
                     className="relative bg-gray-800 p-6 rounded-xl border border-gray-700/50 
-                             transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 
-                             hover:-translate-y-1 cursor-pointer
-                             transform-gpu"
-                    onClick={() => navigate(`/jobs/${job.id}`)}
+                              transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 
+                              hover:-translate-y-1 transform-gpu cursor-pointer"
+                    onClick={() => navigate(`/employer/job/${job.id}`)}
                   >
                     {/* Card Content */}
                     <div className="relative z-10">
@@ -346,8 +404,8 @@ const AppliedJobs = () => {
                       <div className="flex items-center justify-between mt-4">
                         <span className={`px-3 py-1 rounded-full text-sm ${
                           job.status === 'Active' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                          job.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                          job.status === 'Rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                          job.status === 'Closed' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                          job.status === 'Draft' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
                           'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                         }`}>
                           {job.status || 'Active'}
@@ -412,4 +470,5 @@ const AppliedJobs = () => {
   );
 };
 
-export default AppliedJobs;
+export default EmployerJobs;
+

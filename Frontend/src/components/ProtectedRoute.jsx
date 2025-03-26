@@ -5,7 +5,7 @@ import { getToken } from "../../tokenUtils";
 const ProtectedRoute = ({ component: Component, ...rest }) => {
   const token = getToken();
 
-  return token ? <Component {...rest} /> : <Navigate to="/login" />;
+  return token ? <Component {...rest} /> : <Navigate to="/" />;
 };
 
 export default ProtectedRoute;

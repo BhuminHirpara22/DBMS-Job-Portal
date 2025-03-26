@@ -242,7 +242,11 @@ func ApplyJob(c *gin.Context) {
 	// Bind JSON request
 	if err := c.ShouldBindJSON(&application); err != nil {
 		log.Println("[ERROR] Failed to bind JSON:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid input",
+			"error":   err.Error(),
+		})
 		return
 	}
 
@@ -252,7 +256,10 @@ func ApplyJob(c *gin.Context) {
 	// Validate job_seeker_id & job_listing_id
 	if application.JobSeekerID <= 0 || application.JobListingID <= 0 {
 		log.Println("[ERROR] Invalid job_seeker_id or job_listing_id")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job_seeker_id or job_listing_id"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid job seeker ID or job listing ID",
+		})
 		return
 	}
 
@@ -261,20 +268,33 @@ func ApplyJob(c *gin.Context) {
 	if err != nil {
 		if err.Error() == "you have already applied for this job" {
 			log.Printf("[WARN] JobSeekerID=%d has already applied for JobListingID=%d\n", application.JobSeekerID, application.JobListingID)
-			c.JSON(http.StatusConflict, gin.H{"error": "You have already applied for this job"})
+			c.JSON(http.StatusConflict, gin.H{
+				"success": false,
+				"message": "You have already applied for this job",
+				"error":   "Duplicate application",
+			})
 			return
 		}
 		log.Printf("[ERROR] Failed to apply for job: JobSeekerID=%d, JobListingID=%d, Error=%v\n", application.JobSeekerID, application.JobListingID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to apply for job"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to apply for job",
+			"error":   err.Error(),
+		})
 		return
 	}
 
 	//  Log successful application
 	log.Printf("[SUCCESS] JobSeekerID=%d successfully applied for JobListingID=%d (ApplicationID=%d)\n", application.JobSeekerID, application.JobListingID, applicationID)
 
-	c.JSON(http.StatusCreated, gin.H{"application_id": applicationID, "message": "Application submitted successfully"})
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Application submitted successfully",
+		"data": gin.H{
+			"application_id": applicationID,
+		},
+	})
 }
-
 
 // GetAllJobsThatSeekerApplied retrieves all jobs that a specific job seeker has applied for
 func GetAllJobsThatSeekerApplied(c *gin.Context) {

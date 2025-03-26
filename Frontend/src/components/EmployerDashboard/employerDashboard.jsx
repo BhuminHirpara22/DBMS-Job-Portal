@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaPlus, FaClipboardList, FaChartBar, FaBuilding, FaMapMarkerAlt, FaClock, FaMoneyBillWave, FaUsers, FaArrowRight } from "react-icons/fa";
+import { FaPlus, FaClipboardList, FaChartBar, FaBuilding, FaMapMarkerAlt, FaClock, FaMoneyBillWave, FaUsers, FaArrowRight, FaList } from "react-icons/fa";
 import { getToken } from "../../../tokenUtils"; //  Import helper functions
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
   const employerID = getToken(); //  Ensure employer_id is retrieved
-  const [jobs, setJobs] = useState(null); //  Initialize as `null`
+  const [jobs, setJobs] = useState([]);
+  const [topJobs, setTopJobs] = useState([]);
   const [stats, setStats] = useState({ totalJobs: 0, totalApplications: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,12 +30,12 @@ const EmployerDashboard = () => {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/employer/jobs?employer_id=${employerID}`, //  Send employer_id as query param
+        `${import.meta.env.VITE_API_URL}/employer/jobs?employer_id=${employerID}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `employer-token`, //  Correct token format
+            Authorization: `employer-token`,
           },
         }
       );
@@ -42,16 +43,29 @@ const EmployerDashboard = () => {
       if (!response.ok) throw new Error("Failed to fetch jobs");
 
       const data = await response.json();
-      setJobs(data);
+      
+      // Handle null or empty data
+      const jobsData = data || [];
+      setJobs(jobsData);
+      
+      // Sort jobs by applicant count and get top 3
+      const sortedJobs = [...jobsData].sort((a, b) => (b.applicant_count || 0) - (a.applicant_count || 0));
+      setTopJobs(sortedJobs.slice(0, 3));
+      
       setStats({
-        totalJobs: data.length,
-        totalApplications: data.reduce((acc, job) => acc + (job.applicant_count || 0), 0),
+        totalJobs: jobsData.length,
+        totalApplications: jobsData.reduce((acc, job) => acc + (job.applicant_count || 0), 0),
       });
       setError(null);
     } catch (error) {
       console.error("❌ Error fetching jobs:", error);
       setError("Failed to load jobs. Please try again.");
-      setJobs([]); //  Ensure jobs is always an array
+      setJobs([]);
+      setTopJobs([]);
+      setStats({
+        totalJobs: 0,
+        totalApplications: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -128,27 +142,34 @@ const EmployerDashboard = () => {
           </div>
         </div>
 
-        {/* Job Listings */}
+        {/* Top Job Listings */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white">Your Job Listings</h2>
+            <h2 className="text-2xl font-bold text-white">Most Popular Jobs</h2>
             <button
-              onClick={() => navigate("/employer/postjob")}
-              className="flex items-center text-blue-400 hover:text-blue-300 transition-colors duration-300"
+              onClick={() => navigate("/employer/jobs")}
+              className="flex items-center text-blue-400 hover:text-blue-300 transition-colors duration-300 group"
             >
-              <span className="mr-2">Post New Job</span>
-              <FaArrowRight className="transform group-hover:translate-x-1 transition-transform" />
+              <span className="mr-2">View All Jobs</span>
+              <FaList className="transform group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.isArray(jobs) && jobs.length > 0 ? (
-              jobs.map((job) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {jobs.length > 0 ? (
+              topJobs.map((job, index) => (
                 <div
                   key={job.id}
-                  className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 group cursor-pointer"
+                  className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 group cursor-pointer relative"
                   onClick={() => navigate(`/employer/job/${job.id}`)}
                 >
+                  {/* Popular Badge */}
+                  {index < 3 && (
+                    <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                      #{index + 1} Most Popular
+                    </div>
+                  )}
+                  
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0 mr-4">
                       <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors duration-300 truncate">
@@ -179,7 +200,7 @@ const EmployerDashboard = () => {
                     </div>
                     <div className="flex items-center text-gray-400 text-sm">
                       <FaUsers className="mr-2" />
-                      <span>{job.applicant_count || 0} Applications</span>
+                      <span className="text-green-400 font-semibold">{job.applicant_count || 0} Applications</span>
                     </div>
                   </div>
 
@@ -191,12 +212,15 @@ const EmployerDashboard = () => {
             ) : (
               <div className="col-span-full text-center py-12">
                 <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl border border-gray-700/50">
-                  <p className="text-gray-400 text-lg mb-4">No jobs found.</p>
+                  <FaClipboardList className="text-4xl text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg mb-2">Welcome to your Dashboard!</p>
+                  <p className="text-gray-500 text-sm mb-6">Get started by creating your first job posting to attract talented candidates</p>
                   <button
                     onClick={() => navigate("/employer/postjob")}
-                    className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
+                    className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center mx-auto gap-2"
                   >
-                    Post Your First Job
+                    <FaPlus className="text-sm" />
+                    Create Your First Job
                   </button>
                 </div>
               </div>

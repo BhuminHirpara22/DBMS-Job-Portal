@@ -58,10 +58,16 @@ export function Home() {
               Employer Login
             </button>
             <button
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all duration-300"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md mr-4 hover:bg-blue-600 transition-all duration-300"
               onClick={() => navigate("/role")}
             >
               Signup
+            </button>
+            <button
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-all duration-300"
+              onClick={() => navigate("/create-company")}
+            >
+              Register Company
             </button>
           </div>
         </div>
@@ -96,6 +102,15 @@ export function Home() {
             >
               Signup
             </button>
+            <button
+              className="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-all duration-300"
+              onClick={() => {
+                navigate("/create-company");
+                setIsMenuOpen(false);
+              }}
+            >
+              Register Company
+            </button>
           </div>
         </div>
       </header>
@@ -114,15 +129,21 @@ export function Home() {
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
               <button
                 className="w-full sm:w-auto bg-blue-500 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-md hover:bg-blue-600 transition-all duration-300"
-                onClick={() => navigate("/jobs")}
+                onClick={() => navigate("/login/jobseeker")}
               >
                 Browse Jobs
               </button>
               <button
                 className="w-full sm:w-auto bg-transparent text-white border border-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-md hover:bg-gray-800 transition-all duration-300"
-                onClick={() => navigate("/role")}
+                onClick={() => navigate("/login/employer")}
               >
                 Post a Job
+              </button>
+              <button
+                className="w-full sm:w-auto bg-green-500 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-md hover:bg-green-600 transition-all duration-300"
+                onClick={() => navigate("/create-company")}
+              >
+                Register Company
               </button>
             </div>
           </div>

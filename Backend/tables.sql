@@ -584,3 +584,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+-- Create a clustered index on job_seekers.location (for location-based searches).
+CREATE INDEX IF NOT EXISTS idx_job_seekers_location ON job_seekers(location);
+CLUSTER job_seekers USING idx_job_seekers_location;
+
+-- Create a clustered index on employers.companyid (for efficient joins with the company table).
+CREATE INDEX IF NOT EXISTS idx_employers_companyid ON employers(companyid);
+CLUSTER employers USING idx_employers_companyid;
+
+-- Create a normal index on job_listings.job_title to improve searches by job title.
+CREATE INDEX IF NOT EXISTS idx_job_listings_job_title ON job_listings(job_title);
+
+-- Create a clustered index on job_listings.status to quickly filter by job status.
+CREATE INDEX IF NOT EXISTS idx_job_listings_status ON job_listings(status);
+CLUSTER job_listings USING idx_job_listings_status;
+
+CREATE INDEX IF NOT EXISTS idx_company_industry ON company(industry);
+
+CREATE INDEX IF NOT EXISTS idx_job_listings_job_type ON job_listings(job_type);
+
+CREATE INDEX IF NOT EXISTS idx_job_seeker_skills_skill_name ON job_seeker_skills(skill_name);
+
+CREATE INDEX IF NOT EXISTS idx_education_institution ON education(institution_name);
+
+CREATE INDEX IF NOT EXISTS idx_experience_company_name ON experience(company_name);
+

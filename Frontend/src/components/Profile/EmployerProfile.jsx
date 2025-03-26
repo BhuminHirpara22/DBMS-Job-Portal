@@ -79,23 +79,41 @@ const EmployerProfile = () => {
     e.preventDefault();
     try {
       const token = getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/employer/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `employer-token`,
-        },
-        body: JSON.stringify(profile),
-      });
-
-      if (!response.ok) throw new Error("Failed to update profile");
+      
+      const payload = {
+        id: profile.id || 0,  // Use the actual ID from the backend
+        company_id: 1,  // Use the actual company ID
+        email: profile.email,
+        password: "placeholder",  // Required by schema, use placeholder if not updating
+        description: profile.description || null,  
+        contact_person: profile.name || null,
+        contact_number: profile.phone || null,
+        company_name: profile.company_name,
+        industry: profile.industry || null,
+        website: profile.website || null,
+        location: profile.location || null,
+      };
+  
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_URL}/user/update_employer/1`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (response.status !== 200) throw new Error("Failed to update profile");
+      
       setIsEditing(false);
       fetchProfile();
     } catch (error) {
       setError(error.message);
     }
   };
-
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">

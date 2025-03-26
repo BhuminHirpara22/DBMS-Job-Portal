@@ -234,14 +234,24 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 		return
 	}
 
-	var jobSeeker schema.JobSeeker
-	if err := c.ShouldBindJSON(&jobSeeker); err != nil {
+	jobSeeker,err := db.GetJobSeeker(c, id)
+	var jobSeekerInput schema.JobSeekerInput
+	if err := c.ShouldBindJSON(&jobSeekerInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Set the ID to ensure we update the correct record.
-	jobSeeker.ID = id
+	jobSeeker.FirstName = jobSeekerInput.FirstName
+	jobSeeker.LastName = jobSeekerInput.LastName
+	jobSeeker.Location = jobSeekerInput.Location
+	jobSeeker.PhoneNumber = jobSeekerInput.PhoneNumber
+	jobSeeker.Email = jobSeekerInput.Email
+	jobSeeker.Skills = jobSeekerInput.Skills
+	jobSeeker.Experience = jobSeekerInput.Experience
+	jobSeeker.Education = jobSeekerInput.Education
+	jobSeeker.LinkedinURL = jobSeekerInput.LinkedinURL
+	jobSeeker.Resume = jobSeekerInput.Resume
+	jobSeeker.ProfilePicture = jobSeekerInput.ProfilePicture
 
 	// If the password is provided for update, hash it.
 	if jobSeeker.Password != "" {
@@ -259,7 +269,7 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Job Seeker profile updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Job Seeker profile updated successfully","profile": jobSeeker})
 }
 
 // UpdateEmployerProfile handles updating an employer's profile.
@@ -273,16 +283,21 @@ func UpdateEmployerProfile(c *gin.Context) {
 
 	var employer schema.Employer
 	if err := c.ShouldBindJSON(&employer); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	temp, err := db.GetEmployer(c, id)
 
 	employer.ID = id
+	employer.Password = temp.Password
+	employer.CompanyID = temp.CompanyID
 
 	// Hash the password if it's provided.
 	if employer.Password != "" {
 		hashedPassword, err := helpers.HashPassword(employer.Password)
 		if err != nil {
+			fmt.Println(1)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
 			return
 		}
@@ -290,6 +305,7 @@ func UpdateEmployerProfile(c *gin.Context) {
 	}
 
 	if err := db.UpdateEmployer(context.Background(), employer); err != nil {
+		fmt.Println(2)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

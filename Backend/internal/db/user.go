@@ -146,6 +146,8 @@ func GetJobSeeker(ctx context.Context, id int) (schema.JobSeeker, error) {
 		return schema.JobSeeker{}, err
 	}
 
+	fmt.Println("Job Seeker: ", jobSeeker)
+
 	// Fetch Skills
 	skillQuery := `
 		SELECT id, skill_name, skill_level 
@@ -168,6 +170,8 @@ func GetJobSeeker(ctx context.Context, id int) (schema.JobSeeker, error) {
 		skills = append(skills, skill)
 	}
 	jobSeeker.Skills = skills
+
+	fmt.Println("Skills: ", jobSeeker.Skills)
 
 	// Fetch Education
 	educationQuery := `
@@ -199,6 +203,7 @@ func GetJobSeeker(ctx context.Context, id int) (schema.JobSeeker, error) {
 	}
 	jobSeeker.Education = education
 
+
 	// Fetch Experience
 	experienceQuery := `
 		SELECT job_title, company_name, location, start_date, end_date
@@ -222,6 +227,7 @@ func GetJobSeeker(ctx context.Context, id int) (schema.JobSeeker, error) {
 			&exp.EndDate,
 		)
 		if err != nil {
+			fmt.Println("Error scanning experience: ", err)
 			return schema.JobSeeker{}, err
 		}
 		experience = append(experience, exp)
@@ -294,6 +300,7 @@ func ValidateJobSeekerCredentials(ctx context.Context, email, password string) (
 		&jobSeeker.PhoneNumber,
 		&jobSeeker.LinkedinURL,
 	)
+
 	if err != nil {
 		return schema.JobSeeker{}, errors.New("invalid email or password")
 	}
@@ -302,8 +309,6 @@ func ValidateJobSeekerCredentials(ctx context.Context, email, password string) (
 	// if !helpers.CheckPassword(password, jobSeeker.Password) {
 	//     return schema.JobSeeker{}, errors.New("invalid email or password")
 	// }
-
-	
 
 	return jobSeeker, nil
 }

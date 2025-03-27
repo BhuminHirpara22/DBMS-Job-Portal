@@ -121,18 +121,6 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Messages Table
-CREATE TABLE messages (
-    id SERIAL PRIMARY KEY,
-    sender_id INT NOT NULL,
-    sender_type VARCHAR(50) NOT NULL CHECK (sender_type IN ('job_seeker', 'employer')),
-    receiver_id INT NOT NULL,
-    receiver_type VARCHAR(50) NOT NULL CHECK (receiver_type IN ('job_seeker', 'employer')),
-    message TEXT,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_read BOOLEAN DEFAULT FALSE
-);
-
 --  Ensure existing `applicant_count` values are 0 where NULL
 UPDATE job_listings SET applicant_count = 0 WHERE applicant_count IS NULL;
 

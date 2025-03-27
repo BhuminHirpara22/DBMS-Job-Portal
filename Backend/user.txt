@@ -1,0 +1,44 @@
+Aarav Sharma	aarav.sharma@example.com	password123
+Meera Iyer	meera.iyer@example.com	securepass
+Rohan Verma	rohan.verma@example.com	pass@123
+Sanya Kapoor	sanya.kapoor@example.com	sanyaPass!@
+Aditya Singh	aditya.singh@example.com	aditya123
+Ishita Nair	ishita.nair@example.com	ishitaPass!1
+Karthik Menon	karthik.menon@example.com	karthik!2023
+Pooja Chopra	pooja.chopra@example.com	poojaPass@!
+Arjun Das	arjun.das@example.com	arjun#Secure1
+Sneha Bose	sneha.bose@example.com	snehaB@se99
+Ravi Patel	ravi.patel@example.com	raviP@ssword
+Ananya Mishra	ananya.mishra@example.com	ananya!mishra
+Vikram Rao	vikram.rao@example.com	vikramR@o123
+Radhika Gupta	radhika.gupta@example.com	radhika@gupta
+Neeraj Joshi	neeraj.joshi@example.com	neerajJ@shi
+Tanvi Reddy	tanvi.reddy@example.com	tanviR@eddy
+Raj Nanda	raj.nanda@example.com	rajN@nda123
+Divya Shetty	divya.shetty@example.com	divyaS@hetty
+Amit Shukla	amit.shukla@example.com	amitS@hukla
+Nikita Mehta	nikita.mehta@example.com	nikitaM@ehta
+
+
+
+Email	Password
+hr@technova.com	TestPass1
+careers@medicare.com	TestPass2
+jobs@ecobuild.com	TestPass3
+hiring@fintrust.com	TestPass4
+recruitment@agrigrowth.com	TestPass5
+careers@foodies.com	TestPass6
+ai@nextgenai.com	TestPass7
+recruit@edubright.com	TestPass8
+hr@autospeed.com	TestPass9
+jobs@greenenergy.com	TestPass10
+cyber@securenet.com	TestPass11
+export@globaltrade.com	TestPass12
+sports@sportify.com	TestPass13
+fashion@styletrend.com	TestPass14
+recruit@realtyhub.com	TestPass15
+jobs@mediabuzz.com	TestPass16
+logistics@logitrack.com	TestPass17
+pharma@pharmacare.com	TestPass18
+spacex@spacexplore.com	TestPass19
+software@codecrafters.com	TestPass20

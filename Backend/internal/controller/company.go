@@ -46,7 +46,7 @@ func CreateCompanyHandler(c *gin.Context) {
 		filename := fmt.Sprintf("%s%s", companyName, filepath.Ext(file.Filename))
 
 		// Save the file
-		if err := c.SaveUploadedFile(file, "uploads/"+filename); err != nil {
+		if err := c.SaveUploadedFile(file, "uploads/Logos/"+filename); err != nil {
 			fmt.Printf("Error saving file: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,

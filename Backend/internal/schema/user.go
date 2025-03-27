@@ -6,11 +6,11 @@ type JobSeeker struct {
 	LastName       string       `json:"last_name" binding:"required"`
 	Email          string       `json:"email" binding:"required,email"`
 	Password       string       `json:"password" binding:"required,min=6"`
-	Resume         string       `json:"resume,omitempty"`
-	ProfilePicture *string      `json:"profile_picture,omitempty"`
-	PhoneNumber    *string      `json:"phone_number,omitempty"`
-	LinkedinURL    *string      `json:"linkedin_url,omitempty"`
-	Location       *string      `json:"location,omitempty"`
+	Resume         *string      `json:"resume,omitempty"`  // ✅ Use pointers to allow null values
+	ProfilePicture string      `json:"profile_picture,omitempty"`
+	PhoneNumber    string      `json:"phone_number,omitempty"`
+	LinkedinURL    string      `json:"linkedin_url,omitempty"`
+	Location       string      `json:"location,omitempty"`
 	Education      []Education  `json:"education,omitempty"`
 	Experience     []Experience `json:"experience,omitempty"`
 	Skills         []Skill      `json:"skills,omitempty"`
@@ -20,11 +20,11 @@ type JobSeekerInput struct {
 	FirstName      string       `json:"first_name" binding:"required"`
 	LastName       string       `json:"last_name" binding:"required"`
 	Email          string       `json:"email" binding:"required,email"`
-	Resume         string       `json:"resume,omitempty"`
-	ProfilePicture *string      `json:"profile_picture,omitempty"`
-	PhoneNumber    *string      `json:"phone_number,omitempty"`
-	LinkedinURL    *string      `json:"linkedin_url,omitempty"`
-	Location       *string      `json:"location,omitempty"`
+	Resume         *string       `json:"resume,omitempty"`
+	ProfilePicture string      `json:"profile_picture,omitempty"`
+	PhoneNumber    string      `json:"phone_number,omitempty"`
+	LinkedinURL    string      `json:"linkedin_url,omitempty"`
+	Location       string      `json:"location,omitempty"`
 	Education      []Education  `json:"education,omitempty"`
 	Experience     []Experience `json:"experience,omitempty"`
 	Skills         []Skill      `json:"skills,omitempty"`
@@ -59,14 +59,14 @@ type Employer struct {
 	CompanyID     int     `json:"company_id" db:"companyid" binding:"required"`
 	Email         string  `json:"email" db:"email" binding:"required,email"`
 	Password      string  `json:"password" db:"password" binding:"required,min=6"`
-	Description   *string `json:"description,omitempty" db:"description"`
-	ContactPerson *string `json:"contact_person,omitempty" db:"contact_person"`
-	ContactNumber *string `json:"contact_number,omitempty" db:"contact_number"`
+	Description   string `json:"description,omitempty" db:"description"`
+	ContactPerson string `json:"contact_person,omitempty" db:"contact_person"`
+	ContactNumber string `json:"contact_number,omitempty" db:"contact_number"`
 	// Company information
 	CompanyName string  `json:"company_name" db:"company_name"`
-	Industry    *string `json:"industry,omitempty" db:"industry"`
-	Website     *string `json:"website,omitempty" db:"website"`
-	Location    *string `json:"location,omitempty" db:"location"`
+	Industry    string `json:"industry,omitempty" db:"industry"`
+	Website     string `json:"website,omitempty" db:"website"`
+	Location    string `json:"location,omitempty" db:"location"`
 }
 
 // InputEmployer represents the input data for employer registration

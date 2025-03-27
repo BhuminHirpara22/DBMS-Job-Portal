@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaTrash, FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaLinkedin, FaMapMarkerAlt, FaLock, FaGraduationCap, FaBriefcase, FaCode } from "react-icons/fa";
+import { FaPlus, FaTrash, FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaLinkedin, FaMapMarkerAlt, FaLock, FaGraduationCap, FaBriefcase, FaCode, FaFilePdf, FaUpload } from "react-icons/fa";
 
 export function JobSeekerSignup() {
   const [input, setInput] = useState({
@@ -13,6 +13,7 @@ export function JobSeekerSignup() {
     phone_number: "",
     linkedin_url: "",
     location: "",
+    resume: null,
     education: [],
     experience: [],
     skills: [],
@@ -20,6 +21,7 @@ export function JobSeekerSignup() {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [resumePreview, setResumePreview] = useState(null);
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -39,6 +41,12 @@ export function JobSeekerSignup() {
     
     if (!input.phone_number.trim()) newErrors.phone_number = "Phone number is required";
     if (!input.location.trim()) newErrors.location = "Location is required";
+    
+    if (!input.resume) {
+      newErrors.resume = "Resume is required";
+    } else if (input.resume.type !== 'application/pdf') {
+      newErrors.resume = "Only PDF files are allowed";
+    }
     
     if (input.education.length > 0 && !validateEducationFields(input.education)) {
       newErrors.education = "Please complete all education fields";
@@ -64,23 +72,56 @@ export function JobSeekerSignup() {
     }
   };
 
+  const handleResumeChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setErrors({ ...errors, resume: "Only PDF files are allowed" });
+        return;
+      }
+      
+      // Create a preview URL for the PDF
+      const previewUrl = URL.createObjectURL(file);
+      setResumePreview(previewUrl);
+      setInput({ ...input, resume: file });
+      setErrors({ ...errors, resume: "" });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsLoading(true);
+    
     const url = import.meta.env.VITE_API_URL + "/user/register/jobseeker";
     
-    const submitData = {
-      ...input,
-      confirmPassword: undefined,
-      education: input.education.length > 0 ? input.education : undefined,
-      experience: input.experience.length > 0 ? input.experience : undefined,
-      skills: input.skills.length > 0 ? input.skills : undefined,
-    };
+    // Create FormData to handle file upload
+    const formData = new FormData();
+    
+    // Append all text fields
+    Object.keys(input).forEach(key => {
+      if (key !== 'resume' && key !== 'confirmPassword') {
+        if (Array.isArray(input[key])) {
+          formData.append(key, JSON.stringify(input[key]));
+        } else {
+          formData.append(key, input[key]);
+        }
+      }
+    });
 
-    try {
-      const response = await axios.post(url, submitData);
+    // Append resume file
+    if (input.resume) {
+      formData.append('resume', input.resume);
+    }
+
+    try {console.log(input)
+      const response = await axios.post(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
       if (response.data.success) {
         navigate("/login/jobseeker");
       } else {
@@ -599,6 +640,54 @@ export function JobSeekerSignup() {
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* Resume Upload Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <FaFilePdf className="text-blue-500" />
+                  Resume
+                </h3>
+              </div>
+
+              <div className="bg-gray-700/30 p-4 rounded-lg border border-gray-600">
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-600 rounded-lg">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleResumeChange}
+                    className="hidden"
+                    id="resume-upload"
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className="cursor-pointer flex flex-col items-center justify-center"
+                  >
+                    <FaUpload className="text-4xl text-blue-500 mb-2" />
+                    <span className="text-gray-300 text-sm">
+                      {input.resume ? input.resume.name : "Click to upload your resume (PDF only)"}
+                    </span>
+                    <span className="text-gray-400 text-xs mt-1">
+                      Maximum file size: 5MB
+                    </span>
+                  </label>
+                </div>
+
+                {errors.resume && (
+                  <p className="mt-2 text-sm text-red-400">{errors.resume}</p>
+                )}
+
+                {resumePreview && (
+                  <div className="mt-4">
+                    <iframe
+                      src={resumePreview}
+                      className="w-full h-64 rounded-lg border border-gray-600"
+                      title="Resume Preview"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {errors.education && (

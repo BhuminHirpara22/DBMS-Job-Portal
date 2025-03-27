@@ -260,19 +260,14 @@ const AppliedJobs = () => {
         {/* Job Listings */}
         <div className="space-y-6">
           {filteredJobs.length === 0 ? (
-            <div className={`text-center py-12 transform transition-all duration-500 delay-300 
-                           ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-              <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl border border-gray-700/50 
-                            transform hover:scale-105 transition-all duration-300">
+            <div className="text-center py-12">
+              <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl border border-gray-700/50">
                 <FaBriefcase className="mx-auto text-blue-400 text-5xl mb-4 animate-bounce" />
                 <p className="text-gray-400 text-lg mb-4">No applications found.</p>
                 <button
                   onClick={() => navigate('/jobs')}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                           transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20
-                           flex items-center justify-center mx-auto gap-2"
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-300"
                 >
-                  <FaBriefcase className="text-sm" />
                   Browse Jobs
                 </button>
               </div>
@@ -282,87 +277,79 @@ const AppliedJobs = () => {
               {filteredJobs.map((job, index) => (
                 <div
                   key={job.id}
-                  className="group perspective-1000"
+                  className="relative bg-gray-800 p-6 rounded-xl border border-gray-700/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1"
                   style={{
-                    animation: `fadeInUp 0.5s ease-out ${index * 0.1}s forwards`
+                    animation: `fadeInUp 0.5s ease-out ${index * 0.1}s forwards`,
                   }}
                 >
-                  <div
-                    className="relative bg-gray-800 p-6 rounded-xl border border-gray-700/50 
-                             transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 
-                             hover:-translate-y-1 cursor-pointer
-                             transform-gpu"
-                    onClick={() => navigate(`/jobs/${job.id}`)}
-                  >
-                    {/* Card Content */}
-                    <div className="relative z-10">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1 min-w-0 mr-4">
-                          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 
-                                       transition-colors duration-300 truncate">
-                            {job.job_title || 'Untitled Job'}
-                          </h3>
-                          <div className="flex items-center text-gray-300 text-sm">
-                            <FaBuilding className="mr-2 text-blue-400" />
-                            <span className="truncate">{job.company_name}</span>
-                          </div>
-                        </div>
-                        <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm 
-                                       whitespace-nowrap flex-shrink-0 border border-blue-500/30 
-                                       group-hover:bg-blue-500/30 group-hover:border-blue-500/40 
-                                       transition-all duration-300">
-                          {job.job_type}
-                        </span>
-                      </div>
-
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
-                                     transition-colors duration-300">
-                          <FaMapMarkerAlt className="mr-2 text-blue-400" />
-                          <span className="truncate">{job.location || 'Location Not Specified'}</span>
-                        </div>
-                        <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
-                                     transition-colors duration-300">
-                          <FaMoneyBillWave className="mr-2 text-blue-400" />
-                          <span>${job.min_salary?.toLocaleString() || 0} - ${job.max_salary?.toLocaleString() || 0} USD</span>
-                        </div>
-                        <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
-                                     transition-colors duration-300">
-                          <FaUsers className="mr-2 text-blue-400" />
-                          <span>{job.applicant_count || 0} Applications</span>
-                        </div>
-                        <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
-                                     transition-colors duration-300">
-                          <FaCalendarAlt className="mr-2 text-blue-400" />
-                          <span>Posted {new Date(job.posted_date).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
-                                     transition-colors duration-300">
-                          <FaCalendarAlt className="mr-2 text-blue-400" />
-                          <span>Expires {new Date(job.expiry_date).toLocaleDateString()}</span>
+                  {/* Card Content */}
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0 mr-4">
+                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 
+                                     transition-colors duration-300 truncate">
+                          {job.job_title || 'Untitled Job'}
+                        </h3>
+                        <div className="flex items-center text-gray-300 text-sm">
+                          <FaBuilding className="mr-2 text-blue-400" />
+                          <span className="truncate">{job.company_name}</span>
                         </div>
                       </div>
+                      <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm 
+                                     whitespace-nowrap flex-shrink-0 border border-blue-500/30 
+                                     group-hover:bg-blue-500/30 group-hover:border-blue-500/40 
+                                     transition-all duration-300">
+                        {job.job_type}
+                      </span>
+                    </div>
 
-                      <div className="flex items-center justify-between mt-4">
-                        <span className={`px-3 py-1 rounded-full text-sm ${
-                          job.status === 'Active' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                          job.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                          job.status === 'Rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                          'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                        }`}>
-                          {job.status || 'Active'}
-                        </span>
-                        <div className="flex items-center gap-2 text-blue-400 group-hover:text-blue-300 transition-colors">
-                          <span className="text-sm">View Details</span>
-                          <FaArrowRight className="transform group-hover:translate-x-1 transition-transform" />
-                        </div>
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
+                                   transition-colors duration-300">
+                        <FaMapMarkerAlt className="mr-2 text-blue-400" />
+                        <span className="truncate">{job.location || 'Location Not Specified'}</span>
+                      </div>
+                      <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
+                                   transition-colors duration-300">
+                        <FaMoneyBillWave className="mr-2 text-blue-400" />
+                        <span>${job.min_salary?.toLocaleString() || 0} - ${job.max_salary?.toLocaleString() || 0} USD</span>
+                      </div>
+                      <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
+                                   transition-colors duration-300">
+                        <FaUsers className="mr-2 text-blue-400" />
+                        <span>{job.applicant_count || 0} Applications</span>
+                      </div>
+                      <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
+                                   transition-colors duration-300">
+                        <FaCalendarAlt className="mr-2 text-blue-400" />
+                        <span>Posted {new Date(job.posted_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center text-gray-300 text-sm group-hover:text-white 
+                                   transition-colors duration-300">
+                        <FaCalendarAlt className="mr-2 text-blue-400" />
+                        <span>Expires {new Date(job.expiry_date).toLocaleDateString()}</span>
                       </div>
                     </div>
 
-                    {/* Card Background Effects */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 
-                                  rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="flex items-center justify-between mt-4">
+                      <span className={`px-3 py-1 rounded-full text-sm ${
+                        job.status === 'Active' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                        job.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                        job.status === 'Rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                        'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                      }`}>
+                        {job.status || 'Active'}
+                      </span>
+                      <div className="flex items-center gap-2 text-blue-400 group-hover:text-blue-300 transition-colors">
+                        <span className="text-sm">View Details</span>
+                        <FaArrowRight className="transform group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Card Background Effects */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 
+                                rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaHome, FaBriefcase, FaUser, FaClipboardList, FaBuilding, FaPlus, FaBell } from "react-icons/fa";
+import { FaHome, FaBriefcase, FaUser, FaClipboardList, FaBuilding, FaPlus, FaBell, FaChartBar, FaUserTie } from "react-icons/fa";
 import { getToken } from "../../../tokenUtils";
 
 const BottomNav = () => {
@@ -11,6 +11,8 @@ const BottomNav = () => {
   const seekerNavItems = [
     { to: "/jobs", icon: <FaBriefcase />, label: "Jobs" },
     { to: "/applied-jobs", icon: <FaClipboardList />, label: "Apps" },
+    { to: "/job-status", icon: <FaChartBar />, label: "Status" }, // Added Job Status
+    { to: "/interviews", icon: <FaUserTie />, label: "Interviews" }, // Added Interviews
     { to: "/notifications", icon: <FaBell />, label: "Alerts" },
     { to: "/jobseeker/profile", icon: <FaUser />, label: "Profile" },
   ];

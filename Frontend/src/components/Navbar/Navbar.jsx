@@ -42,15 +42,17 @@ const Navbar = () => {
     { to: "/employer/jobs", label: "My Jobs", icon: <FaBriefcase /> },
     { to: "/employer/applications", label: "Applications", icon: <FaFileAlt /> },
     { to: "/employer/profile", label: "Profile", icon: <FaUser /> },
-    { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
+    // { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
   ];
 
   // Job Seeker Navigation Items
   const seekerNavItems = [
     { to: "/jobs", label: "Find Jobs", icon: <FaBriefcase /> },
     { to: "/applied-jobs", label: "My Applications", icon: <FaFileAlt /> },
+    { to: "/job-status", label: "Job Status", icon: <FaChartBar /> }, // Added Job Status
+    { to: "/interviews", label: "Interviews", icon: <FaUserTie /> }, // Added Interviews
     { to: "/jobseeker/profile", label: "Profile", icon: <FaUser /> },
-    { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
+    // { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
   ];
 
   // Get navigation items based on user type

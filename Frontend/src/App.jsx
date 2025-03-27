@@ -23,6 +23,8 @@ import AppliedJobs from "./components/Apply/AppliedJobs";
 import { CreateCompany } from "./components/signup/CreateCompany";
 import EmployerJobs from "./components/EmployerJobDetails/EmployerJobs";
 import Notifications from "./components/Notifications/Notifications";
+import InterviewScheduling from "./components/Interview/InterviewScheduling";
+import AcceptedJobs from "./components/Apply/AcceptedJobs";
 
 
 const router = createBrowserRouter([
@@ -113,6 +115,14 @@ const router = createBrowserRouter([
         path: "/notifications",
         element: <ProtectedRoute component={Notifications} />,
       },
+      {
+        path: "/interviews",
+        element: <ProtectedRoute component={InterviewScheduling} />,
+      },
+      {
+        path: "/job-status",
+        element: <ProtectedRoute component={AcceptedJobs} />,
+      }
     ],
   },
   {

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -20,45 +21,158 @@ import (
 // It binds incoming JSON to the JobSeeker struct, hashes the password,
 // then calls the database function to insert the new job seeker.
 func RegisterJobSeeker(c *gin.Context) {
-	var newJobSeeker schema.JobSeeker
-	if err := c.ShouldBindJSON(&newJobSeeker); err != nil {
-		// fmt.Printf("Error binding JSON: %v\n", err)
+	// Parse multipart form data
+	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10 MB max
+		fmt.Printf("Error parsing form: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "Invalid request data",
+			"message": "Error parsing form data",
 			"error":   err.Error(),
 		})
 		return
 	}
 
-	// fmt.Printf("Received job seeker data: %+v\n", newJobSeeker)
+	var newJobSeeker schema.JobSeeker
 
-	// Hash the provided password for security.
+	// Bind form data instead of JSON
+	// if err := c.ShouldBind(&newJobSeeker); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"success": false,
+	// 		"message": "Invalid request data",
+	// 		"error":   err.Error(),
+	// 	})
+	// 	fmt.Println("Error binding form data:", err)
+	// 	return
+	// }
+
+	// Get form values
+	newJobSeeker.FirstName = c.PostForm("first_name")
+	newJobSeeker.LastName = c.PostForm("last_name")
+	newJobSeeker.Email = c.PostForm("email")
+	newJobSeeker.Password = c.PostForm("password")
+	newJobSeeker.PhoneNumber = c.PostForm("phone_number")
+	newJobSeeker.LinkedinURL = c.PostForm("linkedin_url")
+	newJobSeeker.Location = c.PostForm("location")
+
+	// Validate required fields
+	if newJobSeeker.FirstName == "" || newJobSeeker.LastName == "" || newJobSeeker.Email == "" || newJobSeeker.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "All fields are required",
+		})
+		return
+	}
+
+	// Handle education data
+	educationLevel := c.PostFormArray("education_level")
+	institutionName := c.PostFormArray("institution_name")
+	fieldOfStudy := c.PostFormArray("field_of_study")
+	startYear := c.PostFormArray("start_year")
+	endYear := c.PostFormArray("end_year")
+	grade := c.PostFormArray("grade")
+
+	for i := range educationLevel {
+		newJobSeeker.Education = append(newJobSeeker.Education, schema.Education{
+			Level:        educationLevel[i],
+			Institution:  institutionName[i],
+			FieldOfStudy: fieldOfStudy[i],
+			StartYear:    startYear[i],
+			EndYear:      endYear[i],
+			Grade:        grade[i],
+		})
+	}
+
+	// Handle experience data
+	jobTitle := c.PostFormArray("job_title")
+	companyName := c.PostFormArray("company_name")
+	location := c.PostFormArray("location")
+	startDate := c.PostFormArray("start_date")
+	endDate := c.PostFormArray("end_date")	// Optional
+
+	for i := range jobTitle {
+		newJobSeeker.Experience = append(newJobSeeker.Experience, schema.Experience{
+			JobTitle:    jobTitle[i],
+			CompanyName: companyName[i],
+			Location:    location[i],
+			StartDate:   startDate[i],
+			EndDate:     endDate[i],
+		})
+	}
+
+	// Handle skills data
+	skillName := c.PostFormArray("skill_name")
+	skillProficiency := c.PostFormArray("skill_proficiency")
+
+	for i := range skillName {
+		newJobSeeker.Skills = append(newJobSeeker.Skills, schema.Skill{
+			SkillName:        skillName[i],
+			SkillProficiency: skillProficiency[i],
+		})
+	}
+
+
+	// Handle resume file upload
+	var resumePath string
+	file, fileErr := c.FormFile("resume")
+	if fileErr == nil && file != nil {
+		// Generate a unique filename
+		filename := fmt.Sprintf("%s%s", newJobSeeker.Email, filepath.Ext(file.Filename))
+
+		// Save the file
+		if err := c.SaveUploadedFile(file, "uploads/Resumes/"+filename); err != nil {
+			fmt.Printf("Error saving file: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Error saving resume file",
+				"error":   err.Error(),
+			})
+			return
+		}
+		resumePath = "uploads/Resumes/" + filename
+	} else if fileErr == http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Resume file is required",
+		})
+		return
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Error retrieving resume file",
+			"error":   fileErr.Error(),
+		})
+		return
+	}
+
+	// Assign resume path to job seeker struct
+	newJobSeeker.Resume = &resumePath
+
+	// Hash the provided password
 	hashedPassword, err := helpers.HashPassword(newJobSeeker.Password)
 	if err != nil {
-		// fmt.Printf("Error hashing password: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Error processing password",
 			"error":   err.Error(),
 		})
+		fmt.Println("Error hashing password:", err)
 		return
 	}
 	newJobSeeker.Password = hashedPassword
 
-	// Insert the new job seeker into the database.
+	// Insert the new job seeker into the database
 	id, err := db.RegisterJobSeeker(context.Background(), newJobSeeker)
 	if err != nil {
-		// fmt.Printf("Error registering job seeker: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Error registering job seeker",
 			"error":   err.Error(),
 		})
+		fmt.Println("Error registering job seeker:", err)
 		return
 	}
 
-	// Return a success response with the new user's ID.
+	// Return a success response
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Job Seeker registered successfully",

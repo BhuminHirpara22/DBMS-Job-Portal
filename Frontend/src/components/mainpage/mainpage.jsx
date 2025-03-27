@@ -91,9 +91,7 @@ const Mainpage = () => {
           <div className="relative max-w-2xl mx-auto group">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-xl 
                           transition-all duration-500 group-hover:opacity-100 opacity-0"></div>
-            <div className="relative flex items-center bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 
-                          p-2 group-hover:border-blue-500/50 transition-all duration-300 group-hover:shadow-xl 
-                          group-hover:shadow-blue-500/20">
+            <div className="relative flex items-center bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-2">
               <FaSearch className="text-gray-400 ml-4 group-hover:text-blue-400 transition-colors duration-300" />
               <input
                 type="text"

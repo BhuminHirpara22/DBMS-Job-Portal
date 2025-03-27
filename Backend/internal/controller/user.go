@@ -250,8 +250,10 @@ func SeekerLoginHandler(c *gin.Context) {
 	jobSeeker, err := db.ValidateJobSeekerCredentials(context.Background(), loginReq.Email, loginReq.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+
 		return
 	}
+
 	// Verify the provided password matches the stored hash.
 	if !helpers.CheckPassword(loginReq.Password, jobSeeker.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
@@ -383,9 +385,10 @@ func UpdateJobSeekerProfile(c *gin.Context) {
 		return
 	}
 
+	jobSeeker.Password = "" // Don't return the password in the response
+
 	c.JSON(http.StatusOK, gin.H{"message": "Job Seeker profile updated successfully","profile": jobSeeker})
 }
-
 // UpdateEmployerProfile handles updating an employer's profile.
 // It follows the same pattern as the job seeker update.
 func UpdateEmployerProfile(c *gin.Context) {
@@ -397,21 +400,16 @@ func UpdateEmployerProfile(c *gin.Context) {
 
 	var employer schema.Employer
 	if err := c.ShouldBindJSON(&employer); err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	temp, err := db.GetEmployer(c, id)
 
 	employer.ID = id
-	employer.Password = temp.Password
-	employer.CompanyID = temp.CompanyID
 
 	// Hash the password if it's provided.
 	if employer.Password != "" {
 		hashedPassword, err := helpers.HashPassword(employer.Password)
 		if err != nil {
-			fmt.Println(1)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
 			return
 		}
@@ -419,7 +417,6 @@ func UpdateEmployerProfile(c *gin.Context) {
 	}
 
 	if err := db.UpdateEmployer(context.Background(), employer); err != nil {
-		fmt.Println(2)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

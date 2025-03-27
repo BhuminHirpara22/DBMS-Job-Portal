@@ -294,7 +294,6 @@ func ValidateJobSeekerCredentials(ctx context.Context, email, password string) (
 		&jobSeeker.PhoneNumber,
 		&jobSeeker.LinkedinURL,
 	)
-
 	if err != nil {
 		return schema.JobSeeker{}, errors.New("invalid email or password")
 	}
@@ -303,6 +302,8 @@ func ValidateJobSeekerCredentials(ctx context.Context, email, password string) (
 	// if !helpers.CheckPassword(password, jobSeeker.Password) {
 	//     return schema.JobSeeker{}, errors.New("invalid email or password")
 	// }
+
+	
 
 	return jobSeeker, nil
 }

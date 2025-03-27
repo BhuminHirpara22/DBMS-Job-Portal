@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaFileAlt, FaUser, FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaBriefcase, FaUsers, FaChartLine, FaCalendarAlt } from "react-icons/fa";
+import { FaFileAlt, FaUser, FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaBriefcase, FaUsers, FaChartLine, FaCalendarAlt, FaCog } from "react-icons/fa";
 import { getToken } from "../../../tokenUtils";
+import Settings from "../Settings/Settings";
 import axios from "axios";
+
 const EmployerProfile = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showSettings, setShowSettings] = useState(false); // Add state for settings
   const [profile, setProfile] = useState({
     name: "",
     company_name: "",
@@ -26,7 +29,7 @@ const EmployerProfile = () => {
   const fetchProfile = async () => {
     try {
       const token = getToken();
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/get_employer/1`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/get_employer/${token}`, {
         headers: {
         }
       });
@@ -95,11 +98,11 @@ const EmployerProfile = () => {
       };
   
       const response = await axios.put(
-        `${import.meta.env.VITE_API_URL}/user/update_employer/1`,
+        `${import.meta.env.VITE_API_URL}/user/update_employer/${token}`,
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            // Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -113,7 +116,12 @@ const EmployerProfile = () => {
       setError(error.message);
     }
   };
-  
+
+  // Toggle settings visibility
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
@@ -136,17 +144,29 @@ const EmployerProfile = () => {
     );
   }
 
+  // Show settings if toggled
+  if (showSettings) {
+    return <Settings />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
+        {/* Header with Settings Button */}
+        <div className="text-center mb-8 relative">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Company Profile
           </h1>
           <p className="text-gray-400 text-sm sm:text-base">
             Manage your company information and settings
           </p>
+          <button 
+            onClick={toggleSettings}
+            className="absolute right-0 top-0 p-2 text-blue-400 hover:text-blue-300 transition-colors"
+            title="Settings"
+          >
+            <FaCog size={24} />
+          </button>
         </div>
 
         {/* Main Profile Container */}
@@ -307,13 +327,22 @@ const EmployerProfile = () => {
                   </button>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <FaEdit className="inline-block mr-2" /> Edit Profile
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={toggleSettings}
+                    className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg shadow-gray-500/20 hover:shadow-gray-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    <FaCog className="inline-block mr-2" /> Settings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    <FaEdit className="inline-block mr-2" /> Edit Profile
+                  </button>
+                </>
               )}
             </div>
           </form>

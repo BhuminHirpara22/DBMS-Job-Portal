@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Settings from "../Settings/Settings";
 import {
   FaTrash,
   FaUser,
@@ -16,6 +17,7 @@ import {
   FaGithub,
   FaGlobe,
   FaPlus,
+  FaCog
 } from "react-icons/fa";
 import { getToken } from "../../../tokenUtils";
 import axios from "axios";
@@ -25,6 +27,7 @@ const JobSeekerProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
   const [profile, setProfile] = useState({
     first_name: "",
     last_name: "",
@@ -44,17 +47,22 @@ const JobSeekerProfile = () => {
     fetchProfile();
   }, []);
 
+    // Toggle settings visibility
+    const toggleSettings = () => {
+      setShowSettings(!showSettings);
+    };
+
   const fetchProfile = async () => {
     try {
       const token = getToken();
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/user/get_jobseeker/1`,
+        `${import.meta.env.VITE_API_URL}/user/get_jobseeker/${token}`,
         {
           headers: {},
         }
       );
 
-      console.log(response);
+      // console.log(response);
       if (!(response.status === 200))
         throw new Error("Failed to fetch profile");
 
@@ -205,13 +213,13 @@ const JobSeekerProfile = () => {
         experience: profile.experience || [],
         skills: profile.skills || [],
       };
-      console.log(payload);
+      // console.log(payload);
       const response = await axios.put(
-        `${import.meta.env.VITE_API_URL}/user/update_jobseeker/1`,
+        `${import.meta.env.VITE_API_URL}/user/update_jobseeker/${token}`,
         payload, // Send the payload as the second argument
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Add token authorization
+            // Authorization: `Bearer ${token}`, // Add token authorization
             "Content-Type": "application/json",
           },
         }
@@ -267,6 +275,10 @@ const JobSeekerProfile = () => {
     );
   }
 
+  if (showSettings) {
+    return <Settings />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -278,6 +290,14 @@ const JobSeekerProfile = () => {
           <p className="text-gray-400 text-sm sm:text-base">
             Manage your professional information and settings
           </p>
+
+          <button 
+            onClick={toggleSettings}
+            className="absolute right-0 top-0 p-2 text-blue-400 hover:text-blue-300 transition-colors"
+            title="Settings"
+          >
+            <FaCog size={24} />
+          </button>
         </div>
 
         {/* Main Profile Container */}
@@ -964,6 +984,15 @@ const JobSeekerProfile = () => {
                   </button>
                 </>
               ) : (
+                <div className="flex gap-4">
+
+                <button
+                type="button"
+                onClick={toggleSettings}
+                className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg shadow-gray-500/20 hover:shadow-gray-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <FaCog className="inline-block mr-2" /> Settings
+              </button>
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
@@ -971,6 +1000,8 @@ const JobSeekerProfile = () => {
                 >
                   <FaEdit className="inline-block mr-2" /> Edit Profile
                 </button>
+
+                </div>
               )}
             </div>
           </form>

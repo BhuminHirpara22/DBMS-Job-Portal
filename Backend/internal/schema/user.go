@@ -7,7 +7,7 @@ type JobSeeker struct {
 	Email          string       `json:"email" binding:"required,email"`
 	Password       string       `json:"password" binding:"required,min=6"`
 	Resume         *string      `json:"resume,omitempty"`  // ✅ Use pointers to allow null values
-	ProfilePicture string      `json:"profile_picture,omitempty"`
+	ProfilePicture *string      `json:"profile_picture,omitempty"`
 	PhoneNumber    string      `json:"phone_number,omitempty"`
 	LinkedinURL    string      `json:"linkedin_url,omitempty"`
 	Location       string      `json:"location,omitempty"`
@@ -21,7 +21,7 @@ type JobSeekerInput struct {
 	LastName       string       `json:"last_name" binding:"required"`
 	Email          string       `json:"email" binding:"required,email"`
 	Resume         *string       `json:"resume,omitempty"`
-	ProfilePicture string      `json:"profile_picture,omitempty"`
+	ProfilePicture *string      `json:"profile_picture,omitempty"`
 	PhoneNumber    string      `json:"phone_number,omitempty"`
 	LinkedinURL    string      `json:"linkedin_url,omitempty"`
 	Location       string      `json:"location,omitempty"`

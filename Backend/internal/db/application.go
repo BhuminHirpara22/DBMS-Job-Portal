@@ -252,7 +252,7 @@ func UpdateApplicationStatus(ctx context.Context, applicationID int, status stri
 	return updatedApplication, nil
 }
 
-func GetResults(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJob, error) {
+func GetAcceptedResults(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJob, error) {
 	query := `
 		SELECT a.id, a.job_seeker_id, a.job_listing_id, a.application_status, a.applied_date, 
 		       a.cover_letter, j.job_title, j.location, j.min_salary, j.max_salary, c.company_name
@@ -260,7 +260,42 @@ func GetResults(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJo
 		JOIN job_listings j ON a.job_listing_id = j.id
 		JOIN employers e ON j.employer_id = e.id
 		JOIN company c ON e.companyid = c.id
-		WHERE a.job_seeker_id=$1 AND a.application_status = 'Applied'
+		WHERE a.job_seeker_id=$1 AND a.application_status = 'Accepted'
+	`
+
+	rows, err := config.DB.Query(ctx, query, jobSeekerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var applications []schema.ApplicationandJob
+	for rows.Next() {
+		var application schema.ApplicationandJob
+		err := rows.Scan(&application.ID, &application.JobSeekerID, &application.JobListingID, &application.ApplicationStatus, &application.AppliedDate, &application.CoverLetter, &application.JobTitle, &application.Location, &application.MinSalary, &application.MaxSalary, &application.Company)
+		if err != nil {
+			return nil, err
+		}
+		applications = append(applications, application)
+	}
+
+	// Check if no records were found
+	if len(applications) == 0 {
+		return nil, errors.New("no applications found")
+	}
+
+	return applications, nil
+}
+
+func GetRejectedResults(ctx context.Context, jobSeekerID int) ([]schema.ApplicationandJob, error) {
+	query := `
+		SELECT a.id, a.job_seeker_id, a.job_listing_id, a.application_status, a.applied_date, 
+		       a.cover_letter, j.job_title, j.location, j.min_salary, j.max_salary, c.company_name
+		FROM applications a
+		JOIN job_listings j ON a.job_listing_id = j.id
+		JOIN employers e ON j.employer_id = e.id
+		JOIN company c ON e.companyid = c.id
+		WHERE a.job_seeker_id=$1 AND a.application_status = 'Rejected'
 	`
 
 	rows, err := config.DB.Query(ctx, query, jobSeekerID)

@@ -71,6 +71,7 @@ func GetSeekerApplicationHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"applications": applications})
 }
 
+
 func GetJobApplicationHandler(c *gin.Context) {
 	jobID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -86,6 +87,39 @@ func GetJobApplicationHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"applications": applications})
 }
+
+func GetAcceptedApplicationHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	applications, err := db.GetAcceptedResults(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve results"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"applications": applications})
+}
+
+func GetRejectedApplicationHandler(c *gin.Context) {
+	seekerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
+		return
+	}
+
+	applications, err := db.GetRejectedResults(context.Background(), seekerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve results"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"applications": applications})
+}
+
 
 func UpdateApplicationStatusHandler(c *gin.Context) {
 	// Parse application ID from URL parameter
@@ -145,23 +179,6 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 		"message":     "Application status updated successfully",
 		"application": updatedApplication,
 	})
-}
-
-
-func GetResultHandler(c *gin.Context) {
-	seekerID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
-		return
-	}
-
-	applications, err := db.GetResults(context.Background(), seekerID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve results"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"applications": applications})
 }
 
 // GetSeekerApplicationCountHandler handles the request to get the count of a seeker's applications

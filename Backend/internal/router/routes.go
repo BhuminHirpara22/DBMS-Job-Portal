@@ -24,7 +24,8 @@ func SetupRoutes(router *gin.Engine) {
 		applicationGroup.GET("/get_seeker_application/:id", controller.GetSeekerApplicationHandler)
 		applicationGroup.GET("/get_job_application/:id", controller.GetJobApplicationHandler)
 		applicationGroup.PATCH("/add_result/:id", controller.UpdateApplicationStatusHandler)
-		applicationGroup.GET("/get_result/:id", controller.GetResultHandler)
+		applicationGroup.GET("/get_accepted_application/:id", controller.GetAcceptedApplicationHandler)
+		applicationGroup.GET("/get_rejected_application/:id", controller.GetRejectedApplicationHandler)
 		applicationGroup.GET("/get_application_count/:id", controller.GetSeekerApplicationCountHandler)
 		applicationGroup.GET("/get_result_count/:id", controller.GetResultCountHandler)
 	}

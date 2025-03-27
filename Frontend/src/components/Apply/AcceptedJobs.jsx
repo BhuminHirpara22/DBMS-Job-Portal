@@ -17,24 +17,16 @@ const AcceptedJobs = () => {
             const apiUrl = import.meta.env.VITE_API_URL; // Use VITE_API_URL for API requests
 
             try {
-                const response = await axios.get(
-                    `${apiUrl}/application/get_seeker_application/${seekerId}`,
-                    {
-                        params: { status }, // Pass the status as a query parameter
-                    }
-                );
-
-                if (Array.isArray(response.data)) {
-                    setJobs(response.data);
-                } else {
-                    setJobs([]);
-                }
+                const endpoint = status === "accepted" ? "get_accepted_application" : "get_rejected_application";
+                const response = await axios.get(`${apiUrl}/application/${endpoint}/${seekerId}`);
+                setJobs(Array.isArray(response.data) ? response.data : []);
             } catch (err) {
                 console.error("Error fetching jobs:", err);
                 setError("Failed to fetch jobs. Please try again.");
             } finally {
                 setLoading(false);
             }
+            
         };
 
         fetchJobs();

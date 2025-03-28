@@ -15,13 +15,19 @@ const Apply = () => {
 
   useEffect(() => {
     fetchJobDetails();
-    fetchOtherJobs();
   }, [jobId]);
+
+  useEffect(() => {
+    if (job) {
+      fetchOtherJobs();
+    }
+  }, [jobId, job]);
 
   const fetchJobDetails = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs/${jobId}`);
+      
       if (!response.ok) {
         throw new Error("Failed to fetch job details");
       }
@@ -31,6 +37,20 @@ const Apply = () => {
         setError("Job not found");
         return;
       }
+      
+      // Ensure Requirements is properly formatted as an array
+      if (data.Requirements && !Array.isArray(data.Requirements)) {
+        try {
+          data.Requirements = JSON.parse(data.Requirements);
+        } catch (e) {
+          data.Requirements = [];
+          console.error("Failed to parse requirements:", e);
+        }
+      }
+      
+      // Use either Requirements or requirements field based on what's available
+      data.requirements = data.Requirements || data.requirements || [];
+      
       setJob(data);
       setError(null);
     } catch (error) {
@@ -47,22 +67,86 @@ const Apply = () => {
   };
 
   const fetchOtherJobs = async () => {
-    try {
-      console.log("Fetching other jobs");
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch other jobs");
+    const maxRetries = 3;
+    let retries = 0;
+    
+    const attemptFetch = async () => {
+      try {
+        console.log(`Attempting to fetch other jobs (attempt ${retries + 1}/${maxRetries})`);
+        const apiUrl = `${import.meta.env.VITE_API_URL}/jobs`;
+        console.log(`Fetching from: ${apiUrl}`);
+        
+        // Add a timestamp to prevent caching issues
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs/`);
+
+        console.log(`Server responded with status:`, response); 
+
+        
+        
+        if (!response.status=== 200) {
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`Successfully fetched ${data.length} jobs`);
+        
+        const jobsData = data || [];
+        
+        // Ensure we're comparing the correct type
+        const currentJobId = parseInt(jobId, 10);
+        
+        // Filter jobs that are not the current job
+        const filteredJobs = jobsData.filter(job => {
+          // Convert job ID to number if it's a string
+          const jobIdNum = typeof job.id === 'string' ? parseInt(job.id, 10) : job.id;
+          return jobIdNum !== currentJobId;
+        });
+        
+        console.log(`Filtered to ${filteredJobs.length} other jobs`);
+        
+        // Sort to prioritize jobs in the same category as the current job if possible
+        if (job && job.job_category) {
+          filteredJobs.sort((a, b) => {
+            const aCategory = a.job_category || '';
+            const bCategory = b.job_category || '';
+            
+            if (aCategory === job.job_category && bCategory !== job.job_category) {
+              return -1; // a comes first
+            } else if (aCategory !== job.job_category && bCategory === job.job_category) {
+              return 1; // b comes first
+            }
+            return 0;
+          });
+        }
+        
+        // Limit to a reasonable number
+        setOtherJobs(filteredJobs.slice(0, 10));
+        return true; // Success
+      } catch (error) {
+        console.error("Error fetching other jobs:", error);
+        
+        // Check if we've still got retries left
+        if (retries < maxRetries - 1) {
+          retries++;
+          console.log(`Retrying fetch (${retries}/${maxRetries})...`);
+          return false; // Failed but will retry
+        } else {
+          // No more retries, set empty jobs
+          console.error("Max retries reached. Failed to load other jobs.");
+          setOtherJobs([]);
+          return true; // Failed but won't retry
+        }
       }
-      const data = await response.json();
-      const jobsData = data || [];
-      const filteredJobs = jobsData.filter((job) => job.id !== Number(jobId));
-      setOtherJobs(filteredJobs);
-    } catch (error) {
-      console.error("Error fetching other jobs:", error);
-      if (error.response?.status !== 404) {
-        console.error("Failed to load other jobs");
-      }
-      setOtherJobs([]);
+    };
+
+    // Initial attempt
+    let success = await attemptFetch();
+    
+    // Retry with exponential backoff if needed
+    while (!success && retries < maxRetries) {
+      // Wait with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+      success = await attemptFetch();
     }
   };
 
@@ -252,6 +336,13 @@ const Apply = () => {
                 </div>
               </div>
 
+              {/* Job Category Badge */}
+              {job.job_category && (
+                <div className="mt-6 inline-block px-4 py-2 bg-indigo-500/20 text-indigo-300 rounded-full text-sm border border-indigo-500/30">
+                  <span>Category: {job.job_category}</span>
+                </div>
+              )}
+
               {/* Deadline Section */}
               <div className="mt-6 p-4 bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-lg border border-red-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/10 group-hover:from-red-500/20 group-hover:to-orange-500/20">
                 <div className="flex items-center justify-between">
@@ -306,7 +397,16 @@ const Apply = () => {
                     </li>
                   ))
                 ) : (
-                  <li className="text-gray-300 p-3 bg-gray-900/30 rounded-lg">No specific requirements listed.</li>
+                  job.Requirements && Array.isArray(job.Requirements) && job.Requirements.length > 0 ? (
+                    job.Requirements.map((req, index) => (
+                      <li key={index} className="flex items-start text-gray-300 p-3 bg-gray-900/30 rounded-lg">
+                        <FaCheckCircle className="text-green-500 mr-3 mt-1 flex-shrink-0" />
+                        <span>{req}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-gray-300 p-3 bg-gray-900/30 rounded-lg">No specific requirements listed.</li>
+                  )
                 )}
               </ul>
             </div>

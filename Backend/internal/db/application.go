@@ -280,9 +280,9 @@ func GetAcceptedResults(ctx context.Context, jobSeekerID int) ([]schema.Applicat
 	}
 
 	// Check if no records were found
-	if len(applications) == 0 {
-		return nil, errors.New("no applications found")
-	}
+	// if len(applications) == 0 {
+	// 	return nil, errors.New("no applications found")
+	// }
 
 	return applications, nil
 }
@@ -315,9 +315,9 @@ func GetRejectedResults(ctx context.Context, jobSeekerID int) ([]schema.Applicat
 	}
 
 	// Check if no records were found
-	if len(applications) == 0 {
-		return nil, errors.New("no applications found")
-	}
+	// if len(applications) == 0 {
+	// 	return nil, errors.New("no applications found")
+	// }
 
 	return applications, nil
 }

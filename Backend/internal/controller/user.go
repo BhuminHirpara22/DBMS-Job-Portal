@@ -326,12 +326,6 @@ func DeleteEmployerHandler(c *gin.Context) {
 		return
 	}
 
-	userType := c.Query("type") // Expecting "job_seeker" or "employer"
-	if userType != "job_seeker" && userType != "employer" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user type"})
-		return
-	}
-
 	err = db.DeleteEmployer(context.Background(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

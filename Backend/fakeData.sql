@@ -43,11 +43,11 @@ INSERT INTO company (company_name, industry, website, logo) VALUES
 
 
 INSERT INTO employers (companyid, email, password, description, contact_person, contact_number) VALUES 
-(1, 'hr@technova.com', '$2a$10$eTHe6v24BfSQwr7DOIrhVu2J5wM00xXiGV5iICuCBiLdVmTBS5GQ2', 'TechNova HR manager', 'Alice Johnson', '9876543210'),
-(2, 'careers@medicare.com', '$2a$10$K0eR9X1cF4dsIzgQGHfhceT6ogS6vo/Zs56gvoGwrX1fmlY2QYx/O', 'MediCare hiring team', 'Dr. Bob Smith', '9856231470'),
-(3, 'jobs@ecobuild.com', '$2a$10$B9RML6pFOPG2xmsyNJKyxuRbT2pHJRAkIz/pFxmFVYVX9rlWJeC5m', 'EcoBuild recruitment team', 'Charlie White', '9865324789'),
-(4, 'hiring@fintrust.com', '$2a$10$XGlIvxPvZtP1nZT7GqO4RuFzWWwckzP7L5S5ToRKhGghsQZZB8Bje', 'FinTrust HR lead', 'David Brown', '9998887776'),
-(5, 'recruitment@agrigrowth.com', '$2a$10$L8d0R1FJUpX0QH37.Yo/s.7U7Mn04pjH3GdqKMizwJZVkLfsihb6q', 'AgriGrowth talent acquisition', 'Emily Green', '9784512365'),
+(1, 'hr@technova.com', '$2a$10$j1xAWypDKuqhdnQiGW1bnezbxr1CR0Ux9djm0IiSypEHAvWAfZvVu', 'TechNova HR manager', 'Alice Johnson', '9876543210'),
+(2, 'careers@medicare.com', '$2a$10$mO43.nQ.H7GBLfbx/uD7OO6YewcO5BuAfz/.nlnten3G1hZh9ifua', 'MediCare hiring team', 'Dr. Bob Smith', '9856231470'),
+(3, 'jobs@ecobuild.com', '$2a$10$qpPH8Rv5LsgN4j1iFbEg8uVA8JWwKsYHSO0z1o1boWZjlJdM2TsNi', 'EcoBuild recruitment team', 'Charlie White', '9865324789'),
+(4, 'hiring@fintrust.com', '$2a$10$8p9Bvn/pkfPP48DnUYNG2OTNRlq0QGQZydhhp4YK19e21wuJi2sqC', 'FinTrust HR lead', 'David Brown', '9998887776'),
+(5, 'recruitment@agrigrowth.com', '$2a$10$ZXHddiw/n4iQ0rVmHU4k6O1dsc1RQgnxVmYn6D/4FQIWdnbtNdAJS', 'AgriGrowth talent acquisition', 'Emily Green', '9784512365'),
 (6, 'careers@foodies.com', '$2a$10$hE3yZX5jXf8pZ/TnYAn/yOOzKyb/J6Tp53mQgIY6Xxhy0eJKYJieK', 'Foodies HR head', 'Frank Harris', '9647852314'),
 (7, 'ai@nextgenai.com', '$2a$10$FWdPYwF0a7O0W5ZoBpN5y.5NBvJw5FLy1cH8TAVH1gP2P1wZQpG2i', 'NextGen AI recruiter', 'Grace Adams', '9753124680'),
 (8, 'recruit@edubright.com', '$2a$10$H0lP9eY4S8o/kR5x.pjOYekE8RpYj79XfMZ1QoY97vC3MlZJ5BXje', 'EduBright hiring manager', 'Harry Wilson', '9874123658'),

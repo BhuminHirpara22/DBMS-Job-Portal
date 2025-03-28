@@ -91,6 +91,7 @@ func GetJobApplicationHandler(c *gin.Context) {
 
 func GetAcceptedApplicationHandler(c *gin.Context) {
 	seekerID, err := strconv.Atoi(c.Param("id"))
+	
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid job seeker ID"})
 		return

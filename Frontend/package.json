@@ -16,6 +16,8 @@
     "@mui/styled-engine": "^6.4.8",
     "axios": "^1.8.3",
     "framer-motion": "^12.6.2",
+    "pdfjs": "^2.5.3",
+    "pdfjs-dist": "^5.0.375",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",

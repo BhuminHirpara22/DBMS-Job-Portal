@@ -64,22 +64,20 @@ const EmployerJob = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      console.log(response.json())
-      if (!(response.status===200)) {
+
+      if (!response.ok) {
         throw new Error("Failed to fetch applications");
       }
 
       const data = await response.json();
-      const applicationsData = data || [];
-      setApplications(applicationsData);
+      // Handle the correct response structure with 'applications' array
+      setApplications(data.applications || []);
     } catch (error) {
       console.error("Error fetching applications:", error);
-      if (error.response?.status !== 404) {
-        console.error("Failed to load applications");
-      }
       setApplications([]);
     }
   };
@@ -107,6 +105,7 @@ const EmployerJob = () => {
       navigate("/employer/dashboard");
     } catch (error) {
       console.error("Error deleting job:", error);
+      alert("Failed to delete job. Please try again.");
     }
   };
 
@@ -261,25 +260,49 @@ const EmployerJob = () => {
           {/* Right Column - Applications */}
           <div className="lg:col-span-1">
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 lg:sticky lg:top-24 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10">
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 flex items-center">
-                <FaUserTie className="mr-2 sm:mr-3 text-blue-400" />
-                Applications ({applications.length})
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center">
+                  <FaUserTie className="mr-2 sm:mr-3 text-blue-400" />
+                  Applications ({applications.length})
+                </h2>
+                
+                {applications.length > 0 && (
+                  <button
+                    onClick={() => navigate(`/schedule?job=${jobId}`)}
+                    className="text-sm px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30"
+                  >
+                    Manage All
+                  </button>
+                )}
+              </div>
+              
               <div className="space-y-3 sm:space-y-4">
                 {applications.length > 0 ? (
                   applications.map((app) => (
                     <div
-                      key={app.id}
+                      key={app.application_id}
                       className="p-3 sm:p-4 bg-gray-900/50 rounded-lg border border-gray-700/50 hover:border-blue-500/20 transition-all duration-300 cursor-pointer group"
-                      onClick={() => navigate(`/application/get_seeker_application/${app.id}`)}
+                      onClick={() => navigate(`/schedule?job=${jobId}&applicant=${app.application_id}`)}
                     >
                       <h3 className="text-white font-medium text-sm sm:text-base group-hover:text-blue-400 transition-colors duration-300">
-                        {app.job_seeker_name}
+                        {`${app.first_name} ${app.last_name}` || "Applicant"}
                       </h3>
-                      <p className="text-gray-400 text-xs sm:text-sm mt-1">{app.job_seeker_email}</p>
-                      <p className="text-gray-500 text-xs sm:text-sm mt-2 line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
-                        {app.cover_letter}
+                      <p className="text-gray-400 text-xs sm:text-sm mt-1">
+                        {app.email || "No email provided"}
                       </p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          app.status === 'Accepted' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                          app.status === 'Rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                          app.status === 'Interview Scheduled' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                          'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                        }`}>
+                          {app.status || "Applied"}
+                        </span>
+                        <span className="text-gray-400 text-xs">
+                          {new Date(app.applied_date).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
                   ))
                 ) : (

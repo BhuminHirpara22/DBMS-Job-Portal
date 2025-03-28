@@ -30,3 +30,49 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.7); /* Dark gray background */
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5); /* Blue-500 with transparency */
+  border-radius: 8px;
+  border: 2px solid rgba(31, 41, 55, 0.7);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7); /* Brighter blue on hover */
+}
+
+/* Firefox scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.7);
+}
+
+/* Custom styles for modal scrollbars */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.6);
+  border-radius: 6px;
+}
+
+/* Apply scrollbar styling to the modal content class */
+@layer components {
+  .modal-content {
+    @apply overflow-y-auto max-h-[80vh];
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.7);
+  }
+}
+

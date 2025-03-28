@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { FaBriefcase, FaUser, FaChartBar, FaSignOutAlt, FaBars, FaTimes, FaBuilding, FaFileAlt, FaUsers, FaUserTie } from "react-icons/fa";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { FaBriefcase, FaUser, FaChartBar, FaSignOutAlt, FaBars, FaTimes, FaBuilding, FaFileAlt, FaUsers, FaUserTie, FaClipboardList, FaRobot, FaBell } from "react-icons/fa";
 import { getToken, getUserRole } from "../../../tokenUtils";
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userType, setUserType] = useState(null);
@@ -18,18 +19,43 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Determine user type from token
+  // Determine user type from token and redirect if necessary
   useEffect(() => {
-    const token = getUserRole();
-    if (token) {
-      // Check if token contains 'employer' or 'seeker'
-      if (token.includes('employer')) {
+    const role = getUserRole();
+    if (role) {
+      // Check if role contains 'employer' or 'JobSeeker'
+      if (role.includes('employer')) {
         setUserType('employer');
-      } else if (token.includes('JobSeeker')) {
+        
+        // Redirect employer if trying to access job seeker specific pages
+        if (location.pathname === '/mainpage' || 
+            location.pathname.startsWith('/jobs') || 
+            location.pathname.startsWith('/applied-jobs') ||
+            location.pathname.startsWith('/job-status') ||
+            location.pathname.startsWith('/interviews') ||
+            location.pathname.startsWith('/ats-checker') ||
+            location.pathname.startsWith('/jobseeker')) {
+          navigate('/employer/dashboard');
+        }
+      } else if (role.includes('JobSeeker')) {
         setUserType('seeker');
+        
+        // Redirect job seeker if trying to access employer specific pages
+        if (location.pathname.startsWith('/employer')) {
+          navigate('/mainpage');
+        }
+      }
+    } else {
+      // If no token/role, redirect to login
+      if (!location.pathname.includes('/login') && 
+          !location.pathname.includes('/signup') && 
+          location.pathname !== '/' && 
+          location.pathname !== '/role') {
+        // Redirect to root if not authenticated
+        window.location.href = '/';
       }
     }
-  }, []);
+  }, [location.pathname, navigate]);
 
   // Close menu when route changes
   useEffect(() => {
@@ -40,22 +66,34 @@ const Navbar = () => {
   const employerNavItems = [
     { to: "/employer/dashboard", label: "Dashboard", icon: <FaChartBar /> },
     { to: "/employer/jobs", label: "My Jobs", icon: <FaBriefcase /> },
-    { to: "/employer/profile", label: "Profile", icon: <FaUser /> },
-    // { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
+    { to: "/employer/postjob", label: "Post Job", icon: <FaFileAlt /> },
+    { to: "/notifications", label: "Notifications", icon: <FaBell /> }, // Added notifications for employers
+    { to: "/employer/profile", label: "Profile", icon: <FaBuilding /> },
+    { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> }, // Added logout option
   ];
 
   // Job Seeker Navigation Items
   const seekerNavItems = [
     { to: "/jobs", label: "Find Jobs", icon: <FaBriefcase /> },
-    { to: "/applied-jobs", label: "My Applications", icon: <FaFileAlt /> },
-    { to: "/job-status", label: "Job Status", icon: <FaChartBar /> }, // Added Job Status
-    { to: "/interviews", label: "Interviews", icon: <FaUserTie /> }, // Added Interviews
+    { to: "/applied-jobs", label: "My Applications", icon: <FaClipboardList /> },
+    { to: "/job-status", label: "Job Status", icon: <FaChartBar /> },
+    { to: "/interviews", label: "Interviews", icon: <FaUserTie /> },
+    { to: "/ats-checker", label: "ATS Checker", icon: <FaRobot /> },
+    { to: "/notifications", label: "Notifications", icon: <FaBell /> },
     { to: "/jobseeker/profile", label: "Profile", icon: <FaUser /> },
-    // { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
+    { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> }, // Added logout option
   ];
 
   // Get navigation items based on user type
   const navItems = userType === 'employer' ? employerNavItems : seekerNavItems;
+
+  // If no user type is set but we're in a protected route, show nothing until redirect happens
+  if (!userType && !location.pathname.includes('/login') && 
+      !location.pathname.includes('/signup') && 
+      location.pathname !== '/' && 
+      location.pathname !== '/role') {
+    return null;
+  }
 
   return (
     <nav className={`fixed top-0 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3 shadow-lg z-50 transition-all duration-300 ${

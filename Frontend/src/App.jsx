@@ -26,6 +26,7 @@ import Notifications from "./components/Notifications/Notifications";
 import InterviewScheduling from "./components/Interview/InterviewScheduling";
 import AcceptedJobs from "./components/Apply/AcceptedJobs";
 import Schedule from "./components/EmployerInterViewScheduling/Schedule";
+import ATSChecker from "./components/AtsChecker/AtsChecker";
 
 
 const router = createBrowserRouter([
@@ -126,9 +127,12 @@ const router = createBrowserRouter([
       },
       {
         path: "/schedule",
-        // element: <ProtectedRoute component={Schedule} />,
-        element: <Schedule />,
+        element: <ProtectedRoute component={Schedule} />,
       },
+      {
+        path: "/ats-checker",
+        element: <ProtectedRoute component={ATSChecker} />,
+      }
     ],
   },
   {

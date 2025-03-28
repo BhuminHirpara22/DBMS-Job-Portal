@@ -1,18 +1,18 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaHome, FaBriefcase, FaUser, FaClipboardList, FaBuilding, FaPlus, FaBell, FaChartBar, FaUserTie } from "react-icons/fa";
-import { getToken } from "../../../tokenUtils";
+import { FaHome, FaBriefcase, FaUser, FaClipboardList, FaBuilding, FaPlus, FaBell, FaChartBar, FaUserTie, FaFileAlt } from "react-icons/fa";
+import { getToken, getUserRole } from "../../../tokenUtils";
 
 const BottomNav = () => {
   const location = useLocation();
-  const token = getToken();
-  const isEmployer = token?.startsWith('employer-');
+  const role = getUserRole();
+  const isEmployer = role?.includes('employer');
 
   const seekerNavItems = [
     { to: "/jobs", icon: <FaBriefcase />, label: "Jobs" },
     { to: "/applied-jobs", icon: <FaClipboardList />, label: "Apps" },
-    { to: "/job-status", icon: <FaChartBar />, label: "Status" }, // Added Job Status
-    { to: "/interviews", icon: <FaUserTie />, label: "Interviews" }, // Added Interviews
+    { to: "/job-status", icon: <FaChartBar />, label: "Status" },
+    { to: "/interviews", icon: <FaUserTie />, label: "Interviews" },
     { to: "/notifications", icon: <FaBell />, label: "Alerts" },
     { to: "/jobseeker/profile", icon: <FaUser />, label: "Profile" },
   ];
@@ -21,6 +21,7 @@ const BottomNav = () => {
     { to: "/employer/dashboard", icon: <FaHome />, label: "Home" },
     { to: "/employer/jobs", icon: <FaBriefcase />, label: "Jobs" },
     { to: "/employer/postjob", icon: <FaPlus />, label: "Post" },
+    { to: "/notifications", icon: <FaBell />, label: "Alerts" },
     { to: "/employer/profile", icon: <FaBuilding />, label: "Company" },
   ];
 

@@ -16,6 +16,7 @@ const InterviewScheduling = () => {
         axios
             .get(`${apiUrl}/interview/get_seeker_interview/${seekerId}`)
             .then((response) => {
+                console.log(response)
                 if (Array.isArray(response.data) && response.data.length > 0) {
                     setScheduledJobs(response.data);
                 } else {

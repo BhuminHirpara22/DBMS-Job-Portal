@@ -63,6 +63,7 @@ func GetSeekerInterviewHandler(c *gin.Context) {
 
 	interviews, err := db.GetSeekerInterviews(context.Background(), seekerID)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve interviews"})
 		return
 	}

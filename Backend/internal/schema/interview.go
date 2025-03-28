@@ -8,6 +8,6 @@ type Interview struct {
 	ScheduledDate   time.Time `json:"scheduled_date"`
 	InterviewMode   string `json:"interview_mode"`
 	Status         string `json:"status"`
-	InterviewerName string `json:"interviewer_name"`
-	InterviewLink   string `json:"interview_link"`
+	InterviewerName *string `json:"interviewer_name"`
+	InterviewLink   *string `json:"interview_link"`
 }

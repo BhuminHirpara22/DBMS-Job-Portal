@@ -67,8 +67,8 @@ const EmployerJob = () => {
           },
         }
       );
-
-      if (!response.ok) {
+      console.log(response.json())
+      if (!(response.status===200)) {
         throw new Error("Failed to fetch applications");
       }
 

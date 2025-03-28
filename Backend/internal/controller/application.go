@@ -81,6 +81,7 @@ func GetJobApplicationHandler(c *gin.Context) {
 
 	applications, err := db.GetJobApplications(context.Background(), jobID)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve applications"})
 		return
 	}

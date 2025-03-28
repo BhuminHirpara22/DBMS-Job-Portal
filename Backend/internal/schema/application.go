@@ -31,9 +31,9 @@ type ApplicationDetails struct {
 	LastName         string    `json:"last_name"`
 	Email            string    `json:"email"`
 	PhoneNumber      string    `json:"phone_number"`
-	Resume           string    `json:"resume"`
+	Resume           *string    `json:"resume"`
 	AppliedDate      time.Time `json:"applied_date"`
-	CoverLetter      string    `json:"cover_letter"`
+	CoverLetter      *string    `json:"cover_letter"`
 	Education        []EducationDetails `json:"education"`
 	Experience       []ExperienceDetails `json:"experience"`
 	Skills           []string  `json:"skills"`

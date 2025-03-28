@@ -48,6 +48,7 @@ const Apply = () => {
 
   const fetchOtherJobs = async () => {
     try {
+      console.log("Fetching other jobs");
       const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs`);
       if (!response.ok) {
         throw new Error("Failed to fetch other jobs");

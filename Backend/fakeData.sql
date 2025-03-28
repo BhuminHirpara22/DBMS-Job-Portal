@@ -43,7 +43,7 @@ INSERT INTO company (company_name, industry, website, logo) VALUES
 
 
 INSERT INTO employers (companyid, email, password, description, contact_person, contact_number) VALUES 
-(1, 'hr@technova.com', '$2a$10$J9G1Ely9sJ2L8D5/8P6hS.M6S1nYoQw1Y4rJzOeyrTFFKbg7Z6XbK', 'TechNova HR manager', 'Alice Johnson', '9876543210'),
+(1, 'hr@technova.com', '$2a$10$eTHe6v24BfSQwr7DOIrhVu2J5wM00xXiGV5iICuCBiLdVmTBS5GQ2', 'TechNova HR manager', 'Alice Johnson', '9876543210'),
 (2, 'careers@medicare.com', '$2a$10$K0eR9X1cF4dsIzgQGHfhceT6ogS6vo/Zs56gvoGwrX1fmlY2QYx/O', 'MediCare hiring team', 'Dr. Bob Smith', '9856231470'),
 (3, 'jobs@ecobuild.com', '$2a$10$B9RML6pFOPG2xmsyNJKyxuRbT2pHJRAkIz/pFxmFVYVX9rlWJeC5m', 'EcoBuild recruitment team', 'Charlie White', '9865324789'),
 (4, 'hiring@fintrust.com', '$2a$10$XGlIvxPvZtP1nZT7GqO4RuFzWWwckzP7L5S5ToRKhGghsQZZB8Bje', 'FinTrust HR lead', 'David Brown', '9998887776'),

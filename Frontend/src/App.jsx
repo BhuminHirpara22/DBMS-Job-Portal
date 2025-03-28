@@ -25,6 +25,7 @@ import EmployerJobs from "./components/EmployerJobDetails/EmployerJobs";
 import Notifications from "./components/Notifications/Notifications";
 import InterviewScheduling from "./components/Interview/InterviewScheduling";
 import AcceptedJobs from "./components/Apply/AcceptedJobs";
+import Schedule from "./components/EmployerInterViewScheduling/Schedule";
 
 
 const router = createBrowserRouter([
@@ -122,6 +123,11 @@ const router = createBrowserRouter([
       {
         path: "/job-status",
         element: <ProtectedRoute component={AcceptedJobs} />,
+      },
+      {
+        path: "/schedule",
+        // element: <ProtectedRoute component={Schedule} />,
+        element: <Schedule />,
       }
     ],
   },

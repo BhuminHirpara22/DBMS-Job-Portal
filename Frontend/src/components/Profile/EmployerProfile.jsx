@@ -10,7 +10,7 @@ const EmployerProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showSettings, setShowSettings] = useState(false); // Add state for settings
+  const [showSettings, setShowSettings] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     company_name: "",
@@ -26,17 +26,20 @@ const EmployerProfile = () => {
     fetchProfile();
   }, []);
 
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
+
   const fetchProfile = async () => {
     try {
       const token = getToken();
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/get_employer/${token}`, {
-        headers: {
-        }
+        headers: {},
       });
 
-      console.log(response)
-      if (!(response.status===200)) throw new Error("Failed to fetch profile");
-  
+      console.log(response);
+      if (!(response.status === 200)) throw new Error("Failed to fetch profile");
+
       const data = response.data.profile;
       const safeProfile = {
         name: data.contact_person || "",
@@ -49,22 +52,6 @@ const EmployerProfile = () => {
         industry: data.industry || "",
       };
 
-      // type Employer struct {
-      //   ID            int     `json:"id" db:"id"`
-      //   CompanyID     int     `json:"company_id" db:"companyid" binding:"required"`
-      //   Email         string  `json:"email" db:"email" binding:"required,email"`
-      //   Password      string  `json:"password" db:"password" binding:"required,min=6"`
-      //   Description   *string `json:"description,omitempty" db:"description"`
-      //   ContactPerson *string `json:"contact_person,omitempty" db:"contact_person"`
-      //   ContactNumber *string `json:"contact_number,omitempty" db:"contact_number"`
-      //   // Company information
-      //   CompanyName string  `json:"company_name" db:"company_name"`
-      //   Industry    *string `json:"industry,omitempty" db:"industry"`
-      //   Website     *string `json:"website,omitempty" db:"website"`
-      //   Location    *string `json:"location,omitempty" db:"location"`
-      // }
-      
-  
       setProfile(safeProfile);
     } catch (error) {
       setError(error.message);
@@ -82,13 +69,13 @@ const EmployerProfile = () => {
     e.preventDefault();
     try {
       const token = getToken();
-      
+
       const payload = {
-        id: profile.id || 0,  // Use the actual ID from the backend
-        company_id: 1,  // Use the actual company ID
+        id: profile.id || 0,
+        company_id: 1,
         email: profile.email,
-        password: "placeholder",  // Required by schema, use placeholder if not updating
-        description: profile.description || null,  
+        password: "placeholder",
+        description: profile.description || null,
         contact_person: profile.name || null,
         contact_number: profile.phone || null,
         company_name: profile.company_name,
@@ -96,30 +83,24 @@ const EmployerProfile = () => {
         website: profile.website || null,
         location: profile.location || null,
       };
-  
+
       const response = await axios.put(
         `${import.meta.env.VITE_API_URL}/user/update_employer/${token}`,
         payload,
         {
           headers: {
-            // Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
       );
-  
+
       if (response.status !== 200) throw new Error("Failed to update profile");
-      
+
       setIsEditing(false);
       fetchProfile();
     } catch (error) {
       setError(error.message);
     }
-  };
-
-  // Toggle settings visibility
-  const toggleSettings = () => {
-    setShowSettings(!showSettings);
   };
 
   if (isLoading) {
@@ -144,7 +125,6 @@ const EmployerProfile = () => {
     );
   }
 
-  // Show settings if toggled
   if (showSettings) {
     return <Settings />;
   }
@@ -152,7 +132,7 @@ const EmployerProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header with Settings Button */}
+        {/* Header */}
         <div className="text-center mb-8 relative">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Company Profile
@@ -160,7 +140,7 @@ const EmployerProfile = () => {
           <p className="text-gray-400 text-sm sm:text-base">
             Manage your company information and settings
           </p>
-          <button 
+          <button
             onClick={toggleSettings}
             className="absolute right-0 top-0 p-2 text-blue-400 hover:text-blue-300 transition-colors"
             title="Settings"
@@ -176,7 +156,7 @@ const EmployerProfile = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Company Name */}
               <div className="group sm:col-span-2">
-              <label className="block text-gray-300 font-medium mb-2 flex items-center">
+                <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaBuilding className="mr-2 text-blue-400" />
                   Name
                 </label>
@@ -238,23 +218,6 @@ const EmployerProfile = () => {
                 />
               </div>
 
-              {/* Location */}
-              {/* <div className="group">
-                <label className="block text-gray-300 font-medium mb-2 flex items-center">
-                  <FaMapMarkerAlt className="mr-2 text-blue-400" />
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={profile.location}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 disabled:opacity-75"
-                  required
-                />
-              </div> */}
-
               {/* Website */}
               <div className="group">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
@@ -288,7 +251,6 @@ const EmployerProfile = () => {
                   required
                 />
               </div>
-
             </div>
 
             {/* Company Description */}
@@ -327,7 +289,7 @@ const EmployerProfile = () => {
                   </button>
                 </>
               ) : (
-                <>
+                <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={toggleSettings}
@@ -342,7 +304,7 @@ const EmployerProfile = () => {
                   >
                     <FaEdit className="inline-block mr-2" /> Edit Profile
                   </button>
-                </>
+                </div>
               )}
             </div>
           </form>

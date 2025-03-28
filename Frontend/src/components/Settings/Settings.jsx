@@ -56,7 +56,7 @@ const Settings = () => {
       });
 
       removeToken();
-      navigate("/register");
+      navigate("/");
     } catch (error) {
       setError("Failed to delete account. Please try again.");
     }

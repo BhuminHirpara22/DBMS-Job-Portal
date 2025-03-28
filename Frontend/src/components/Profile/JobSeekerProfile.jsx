@@ -14,8 +14,6 @@ import {
   FaBriefcase,
   FaFileAlt,
   FaLinkedin,
-  FaGithub,
-  FaGlobe,
   FaPlus,
   FaCog
 } from "react-icons/fa";
@@ -39,19 +37,15 @@ const JobSeekerProfile = () => {
     education: [],
     resume_url: "",
     linkedin_url: "",
-    // github_url: "",
-    // portfolio_url: "",
   });
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-      // Toggle settings visibility
-      const toggleSettings = () => {
-        setShowSettings(!showSettings);
-      };
-  
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
 
   const fetchProfile = async () => {
     try {
@@ -63,27 +57,22 @@ const JobSeekerProfile = () => {
         }
       );
 
-      // console.log(response);
       if (!(response.status === 200))
         throw new Error("Failed to fetch profile");
 
       const data = response.data.profile;
 
-      // Ensure the structure is consistent
       const safeProfile = {
         first_name: data.first_name || "",
         last_name: data.last_name || "",
         email: data.email || "",
         phone: data.phone_number || "",
         location: data.location || "",
-        // bio: data.bio || "",
-        skills: data.skills || [], // Ensure `skills` is always an array
+        skills: data.skills || [],
         experience: data.experience || [],
         education: data.education || [],
         resume_url: data.resume_url || "",
         linkedin_url: data.linkedin_url || "",
-        // github_url: data.github_url || "",
-        // portfolio_url: data.portfolio_url || "",
       };
 
       setProfile(safeProfile);
@@ -93,19 +82,6 @@ const JobSeekerProfile = () => {
       setIsLoading(false);
     }
   };
-  // ID             int          `json:"id"`
-  // FirstName      string       `json:"first_name" binding:"required"`
-  // LastName       string       `json:"last_name" binding:"required"`
-  // Email          string       `json:"email" binding:"required,email"`
-  // Password       string       `json:"password" binding:"required,min=6"`
-  // Resume         string       `json:"resume,omitempty"`
-  // ProfilePicture *string      `json:"profile_picture,omitempty"`
-  // PhoneNumber    *string      `json:"phone_number,omitempty"`
-  // LinkedinURL    *string      `json:"linkedin_url,omitempty"`
-  // Location       *string      `json:"location,omitempty"`
-  // Education      []Education  `json:"education,omitempty"`
-  // Experience     []Experience `json:"experience,omitempty"`
-  // Skills         []Skill      `json:"skills,omitempty"`
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -117,12 +93,8 @@ const JobSeekerProfile = () => {
     updatedSkills[index] = value;
     setProfile({ ...profile, skills: updatedSkills });
   };
+
   const addEducation = () => {
-    if (profile.education.length > 0) {
-      // setErrors({ ...errors, education: "Please fill all fields before adding new education" });
-      return;
-    }
-    //setErrors({ ...errors, education: "" });
     setProfile({
       ...profile,
       education: [
@@ -141,15 +113,10 @@ const JobSeekerProfile = () => {
 
   const removeEducation = (index) => {
     const newEducation = profile.education.filter((_, i) => i !== index);
-    setInput({ ...profile, education: newEducation });
+    setProfile({ ...profile, education: newEducation });
   };
 
   const addExperience = () => {
-    if (profile.experience.length > 0) {
-      // setErrors({ ...errors, experience: "Please fill all fields before adding new experience" });
-      return;
-    }
-    // setErrors({ ...errors, experience: "" });
     setProfile({
       ...profile,
       experience: [
@@ -166,15 +133,11 @@ const JobSeekerProfile = () => {
   };
 
   const removeExperience = (index) => {
-    const newExperience = prfoile.experience.filter((_, i) => i !== index);
-    setInput({ ...profile, experience: newExperience });
+    const newExperience = profile.experience.filter((_, i) => i !== index);
+    setProfile({ ...profile, experience: newExperience });
   };
+
   const addSkill = () => {
-    if (profile.skills.length > 0) {
-      // setErrors({ ...errors, skills: "Please fill all fields before adding new skill" });
-      return;
-    }
-    //setErrors({ ...errors, skills: "" });
     setProfile({
       ...profile,
       skills: [
@@ -191,6 +154,7 @@ const JobSeekerProfile = () => {
     const newSkills = profile.skills.filter((_, i) => i !== index);
     setProfile({ ...profile, skills: newSkills });
   };
+
   const handleSubmit = async (e) => {
     setIsEditing(false);
     e.preventDefault();
@@ -200,33 +164,54 @@ const JobSeekerProfile = () => {
     try {
       const token = getToken();
 
-      // Ensure the payload structure matches the backend struct
+      const formattedExperience = profile.experience.map(exp => ({
+        job_title: exp.job_title,
+        company_name: exp.company_name,
+        location: exp.location || "",
+        start_date: exp.start_date ? new Date(exp.start_date).toISOString() : new Date().toISOString(),
+        end_date: exp.end_date ? new Date(exp.end_date).toISOString() : null,
+      }));
+
+      const formattedEducation = profile.education.map(edu => ({
+        education_level: edu.education_level,
+        institution_name: edu.institution_name,
+        field_of_study: edu.field_of_study,
+        start_year: edu.start_year,
+        end_year: edu.end_year,
+        grade: edu.grade || "",
+      }));
+
+      const formattedSkills = profile.skills.map(skill => ({
+        name: skill.name,
+        level: skill.level,
+      }));
+
       const payload = {
         first_name: profile.first_name,
         last_name: profile.last_name,
         email: profile.email,
         resume: profile.resume_url || "",
-        profile_picture: null, // Add as null if not provided
-        phone_number: profile.phone || null,
-        linkedin_url: profile.linkedin_url || null,
-        location: profile.location || null,
-        education: profile.education || [],
-        experience: profile.experience || [],
-        skills: profile.skills || [],
+        profile_picture: null,
+        phone_number: profile.phone || "",
+        linkedin_url: profile.linkedin_url || "",
+        location: profile.location || "",
+        education: formattedEducation,
+        experience: formattedExperience,
+        skills: formattedSkills,
       };
-      // console.log(payload);
+
+      console.log("Sending payload:", payload);
+
       const response = await axios.put(
         `${import.meta.env.VITE_API_URL}/user/update_jobseeker/${token}`,
-        payload, // Send the payload as the second argument
+        payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Add token authorization
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
       );
-
-      // console.log(response);
 
       if (response.status !== 200) throw new Error("Failed to update profile");
 
@@ -247,8 +232,8 @@ const JobSeekerProfile = () => {
 
       setProfile(safeProfile);
     } catch (error) {
-      console.error(error);
-      setError(error.message);
+      console.error("Error updating profile:", error);
+      setError(error.message || "Failed to update profile");
     } finally {
       setIsLoading(false);
     }
@@ -275,6 +260,7 @@ const JobSeekerProfile = () => {
       </div>
     );
   }
+  
   if (showSettings) {
     return <Settings />;
   }
@@ -282,7 +268,6 @@ const JobSeekerProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Professional Profile
@@ -299,12 +284,9 @@ const JobSeekerProfile = () => {
           </button>
         </div>
 
-        {/* Main Profile Container */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-gray-700/50 shadow-xl shadow-blue-500/5 hover:shadow-blue-500/10 transition-all duration-300">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* Full Name */}
               <div className="group sm:col-span-2">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaUser className="mr-2 text-blue-400" />
@@ -321,7 +303,7 @@ const JobSeekerProfile = () => {
                 />
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaUser className="mr-2 text-blue-400" />
-                  Lasr Name
+                  Last Name
                 </label>
                 <input
                   type="text"
@@ -334,7 +316,6 @@ const JobSeekerProfile = () => {
                 />
               </div>
 
-              {/* Email */}
               <div className="group">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaEnvelope className="mr-2 text-blue-400" />
@@ -351,7 +332,6 @@ const JobSeekerProfile = () => {
                 />
               </div>
 
-              {/* Phone */}
               <div className="group">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaPhone className="mr-2 text-blue-400" />
@@ -368,7 +348,6 @@ const JobSeekerProfile = () => {
                 />
               </div>
 
-              {/* Location */}
               <div className="group">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaMapMarkerAlt className="mr-2 text-blue-400" />
@@ -386,7 +365,6 @@ const JobSeekerProfile = () => {
               </div>
             </div>
 
-            {/* Skills Section */}
             <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700/50">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                 <FaBriefcase className="mr-2 text-blue-400" />
@@ -474,9 +452,8 @@ const JobSeekerProfile = () => {
                           <input
                             className="w-full p-2 bg-gray-700/50 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                             value={skill.level}
-                            required
                             disabled={!isEditing}
-                          ></input>
+                          />
                         </div>
                       </div>
                     </div>
@@ -492,6 +469,7 @@ const JobSeekerProfile = () => {
                 </button>
               )}
             </div>
+            
             <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700/50 mt-6">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                 <FaBriefcase className="mr-2 text-blue-400" />
@@ -535,8 +513,7 @@ const JobSeekerProfile = () => {
                             value={exp.company_name}
                             onChange={(e) => {
                               let newExperience = [...profile.experience];
-                              newExperience[index].company_name =
-                                e.target.value;
+                              newExperience[index].company_name = e.target.value;
                               setProfile({
                                 ...profile,
                                 experience: newExperience,
@@ -660,7 +637,7 @@ const JobSeekerProfile = () => {
                           <input
                             type="text"
                             className="w-full p-2 bg-gray-700/50 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                            value={exp.start_date}
+                            value={exp.start_date ? new Date(exp.start_date).toLocaleDateString() : ""}
                             disabled
                           />
                         </div>
@@ -671,7 +648,7 @@ const JobSeekerProfile = () => {
                           <input
                             type="text"
                             className="w-full p-2 bg-gray-700/50 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                            value={exp.end_date}
+                            value={exp.end_date ? new Date(exp.end_date).toLocaleDateString() : ""}
                             disabled
                           />
                         </div>
@@ -689,6 +666,7 @@ const JobSeekerProfile = () => {
                 </button>
               )}
             </div>
+            
             <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700/50 mt-6">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                 <FaGraduationCap className="mr-2 text-blue-400" />
@@ -711,8 +689,7 @@ const JobSeekerProfile = () => {
                             value={edu.education_level}
                             onChange={(e) => {
                               let newEducation = [...profile.education];
-                              newEducation[index].education_level =
-                                e.target.value;
+                              newEducation[index].education_level = e.target.value;
                               setProfile({
                                 ...profile,
                                 education: newEducation,
@@ -737,8 +714,7 @@ const JobSeekerProfile = () => {
                             value={edu.institution_name}
                             onChange={(e) => {
                               let newEducation = [...profile.education];
-                              newEducation[index].institution_name =
-                                e.target.value;
+                              newEducation[index].institution_name = e.target.value;
                               setProfile({
                                 ...profile,
                                 education: newEducation,
@@ -758,8 +734,7 @@ const JobSeekerProfile = () => {
                             value={edu.field_of_study}
                             onChange={(e) => {
                               let newEducation = [...profile.education];
-                              newEducation[index].field_of_study =
-                                e.target.value;
+                              newEducation[index].field_of_study = e.target.value;
                               setProfile({
                                 ...profile,
                                 education: newEducation,
@@ -927,9 +902,7 @@ const JobSeekerProfile = () => {
               )}
             </div>
 
-            {/* Social Links */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              {/* LinkedIn */}
               <div className="group">
                 <label className="block text-gray-300 font-medium mb-2 flex items-center">
                   <FaLinkedin className="mr-2 text-blue-400" />
@@ -947,7 +920,6 @@ const JobSeekerProfile = () => {
               </div>
             </div>
 
-            {/* Resume Upload */}
             <div className="group">
               <label className="block text-gray-300 font-medium mb-2 flex items-center">
                 <FaFileAlt className="mr-2 text-blue-400" />
@@ -964,7 +936,6 @@ const JobSeekerProfile = () => {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-end gap-4 pt-4">
               {isEditing ? (
                 <>
@@ -984,22 +955,20 @@ const JobSeekerProfile = () => {
                 </>
               ) : (
                 <div className="flex gap-4">
-
-                <button
-                type="button"
-                onClick={toggleSettings}
-                className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg shadow-gray-500/20 hover:shadow-gray-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
-              >
-                <FaCog className="inline-block mr-2" /> Settings
-              </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <FaEdit className="inline-block mr-2" /> Edit Profile
-                </button>
-
+                  <button
+                    type="button"
+                    onClick={toggleSettings}
+                    className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg shadow-gray-500/20 hover:shadow-gray-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    <FaCog className="inline-block mr-2" /> Settings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    <FaEdit className="inline-block mr-2" /> Edit Profile
+                  </button>
                 </div>
               )}
             </div>

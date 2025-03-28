@@ -293,17 +293,6 @@ func UpdateEmployerProfile(c *gin.Context) {
 	employer.Password = temp.Password
 	employer.CompanyID = temp.CompanyID
 
-	// Hash the password if it's provided.
-	if employer.Password != "" {
-		hashedPassword, err := helpers.HashPassword(employer.Password)
-		if err != nil {
-			fmt.Println(1)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
-			return
-		}
-		employer.Password = hashedPassword
-	}
-
 	if err := db.UpdateEmployer(context.Background(), employer); err != nil {
 		fmt.Println(2)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -18,14 +18,15 @@ func ScheduleInterviewHandler(c *gin.Context) {
 		return
 	}
 	// Step 1: Generate a new application ID
-	newID, err := db.GenerateInterviewID(context.Background())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate interview ID"})
-		return
-	}
+	// newID, err := db.GenerateInterviewID(context.Background())
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate interview ID"})
+	// 	return
+	// }
 
 	// Step 2: Assign the generated ID to the application struct
-	interview.ID = newID
+	// interview.ID = newID
 
 	result, err := db.ScheduleInterview(context.Background(), interview)
 	if err != nil {

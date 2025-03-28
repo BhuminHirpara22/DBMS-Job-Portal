@@ -141,8 +141,8 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 	}
 
 	// Validate status
-	if requestBody.Status != "Approved" && requestBody.Status != "Rejected" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Allowed values: 'Approved' or 'Rejected'"})
+	if requestBody.Status != "Accepted" && requestBody.Status != "Rejected" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Allowed values: 'Accepted' or 'Rejected'"})
 		return
 	}
 
@@ -150,12 +150,14 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 	updatedApplication, err := db.UpdateApplicationStatus(context.Background(), applicationID, requestBody.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update application status"})
+		fmt.Println(1,err)
 		return
 	}
 
 	// Delete the interview related to the application
 	err = db.DeleteInterview(context.Background(), applicationID)
 	if err != nil {
+		fmt.Println(2,err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete interview"})
 		return
 	}

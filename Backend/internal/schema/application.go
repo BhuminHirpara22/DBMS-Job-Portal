@@ -37,6 +37,7 @@ type ApplicationDetails struct {
 	Education        []EducationDetails `json:"education"`
 	Experience       []ExperienceDetails `json:"experience"`
 	Skills           []string  `json:"skills"`
+	ApplicationStatus string    `json:"application_status"`
 }
 
 type EducationDetails struct {

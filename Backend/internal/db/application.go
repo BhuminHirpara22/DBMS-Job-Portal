@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"fmt"
 )
 
 func GenerateApplicationID(ctx context.Context) (int, error) {
@@ -96,7 +97,8 @@ func GetJobApplications(ctx context.Context, jobListingID int) ([]schema.Applica
 	    js.phone_number, 
 	    js.resume,
 	    a.applied_date,
-	    a.cover_letter
+	    a.cover_letter,
+		a.application_status
 	FROM applications a
 	JOIN job_seekers js ON a.job_seeker_id = js.id
 	WHERE a.job_listing_id = $1`
@@ -116,7 +118,7 @@ func GetJobApplications(ctx context.Context, jobListingID int) ([]schema.Applica
 
 		err := rows.Scan(
 			&app.ApplicationID, &jobSeekerID, &app.FirstName, &app.LastName, &app.Email,
-			&app.PhoneNumber, &app.Resume, &app.AppliedDate, &app.CoverLetter,
+			&app.PhoneNumber, &app.Resume, &app.AppliedDate, &app.CoverLetter,&app.ApplicationStatus,
 		)
 		if err != nil {
 			return nil, err
@@ -129,7 +131,11 @@ func GetJobApplications(ctx context.Context, jobListingID int) ([]schema.Applica
 
 	// Iterate over the applications and fetch education, experience, and skills
 	for i := range applications {
-		jobSeekerID := applications[i].ApplicationID
+		application, err := GetApplication(ctx, applications[i].ApplicationID)
+		if err != nil {
+			return nil, err
+		}
+		jobSeekerID := application.JobSeekerID
 
 		// Fetch education details
 		educationQuery := `
@@ -142,6 +148,8 @@ func GetJobApplications(ctx context.Context, jobListingID int) ([]schema.Applica
 		    grade
 		FROM education 
 		WHERE job_seeker_id = $1`
+
+		fmt.Println("Job Seeker ID: ", jobSeekerID)
 
 		eduRows, err := config.DB.Query(ctx, educationQuery, jobSeekerID)
 		if err != nil {

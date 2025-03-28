@@ -16,19 +16,50 @@ const InterviewScheduling = () => {
         axios
             .get(`${apiUrl}/interview/get_seeker_interview/${seekerId}`)
             .then((response) => {
-                console.log(response)
-                if (Array.isArray(response.data) && response.data.length > 0) {
-                    setScheduledJobs(response.data);
+                // The data is nested inside an 'interviews' array
+                if (response.data && response.data.interviews && Array.isArray(response.data.interviews) && response.data.interviews.length > 0) {
+                    setScheduledJobs(response.data.interviews);
                 } else {
                     setScheduledJobs([]);
                 }
                 setLoading(false);
             })
-            .catch(() => {
+            .catch((err) => {
+                console.error("Interview fetch error:", err);
                 setError("Failed to fetch scheduled interviews. Please try again.");
                 setLoading(false);
             });
     }, []);
+
+    // Format date from ISO string to readable format
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    // Extract time from ISO string
+    const formatTime = (dateString) => {
+        if (!dateString) return "N/A";
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Render the status badge with appropriate color
+    const getStatusBadge = (status) => {
+        let bgColor = "bg-gray-500";
+        
+        if (status === "Completed") bgColor = "bg-green-500";
+        else if (status === "Scheduled") bgColor = "bg-blue-500";
+        else if (status === "Pending") bgColor = "bg-yellow-500";
+        else if (status === "Cancelled") bgColor = "bg-red-500";
+        
+        return (
+            <span className={`${bgColor} text-white text-xs font-medium py-1 px-2 rounded-full`}>
+                {status || "Unknown"}
+            </span>
+        );
+    };
 
     if (loading) {
         return (
@@ -93,9 +124,9 @@ const InterviewScheduling = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {scheduledJobs.map((job, index) => (
+                            {scheduledJobs.map((interview, index) => (
                                 <div
-                                    key={job.id}
+                                    key={interview.application_id || interview.id}
                                     className="relative bg-gray-800 p-6 rounded-xl border border-gray-700/50 
                                     transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1"
                                     style={{
@@ -103,24 +134,46 @@ const InterviewScheduling = () => {
                                     }}
                                 >
                                     <div className="relative z-10">
-                                        <h3 className="text-xl font-bold text-white mb-2">
-                                            {job.jobTitle || "Untitled Job"}
-                                        </h3>
-                                        <p className="text-gray-400 mb-4">
-                                            <strong>Company:</strong> {job.companyName}
-                                        </p>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h3 className="text-xl font-bold text-white">
+                                                Application #{interview.application_id || "N/A"}
+                                            </h3>
+                                            {getStatusBadge(interview.status)}
+                                        </div>
                                         <div className="space-y-3">
                                             <p className="text-gray-400">
                                                 <FaCalendarAlt className="inline-block mr-2 text-green-400" />
-                                                <strong>Date:</strong> {job.interviewDate}
+                                                <strong>Date:</strong> {formatDate(interview.scheduled_date)}
                                             </p>
                                             <p className="text-gray-400">
                                                 <FaClock className="inline-block mr-2 text-yellow-400" />
-                                                <strong>Time:</strong> {job.interviewTime}
+                                                <strong>Time:</strong> {formatTime(interview.scheduled_date)}
                                             </p>
                                             <p className="text-gray-400">
                                                 <FaMapMarkerAlt className="inline-block mr-2 text-red-400" />
-                                                <strong>Location:</strong> {job.interviewLocation}
+                                                <strong>Location:</strong> {interview.location || "Remote"}
+                                            </p>
+                                            <p className="text-gray-400">
+                                                <i className="fas fa-user-tie inline-block mr-2 text-purple-400"></i>
+                                                <strong>Interviewer:</strong> {interview.interviewer_name || "Not assigned"}
+                                            </p>
+                                            <p className="text-gray-400">
+                                                <i className="fas fa-video inline-block mr-2 text-blue-400"></i>
+                                                <strong>Mode:</strong> {interview.interview_mode || "Not specified"}
+                                            </p>
+                                            {interview.interview_link && (
+                                                <a 
+                                                    href={interview.interview_link} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="block mt-4 text-blue-400 hover:text-blue-300 transition-colors"
+                                                >
+                                                    <i className="fas fa-external-link-alt mr-2"></i>
+                                                    Join Interview
+                                                </a>
+                                            )}
+                                            <p className="text-gray-500 text-xs mt-2">
+                                                <strong>Interview ID:</strong> #{interview.id}
                                             </p>
                                         </div>
                                     </div>

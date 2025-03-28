@@ -54,6 +54,12 @@ export function EmployerSignup() {
     if (input.password !== input.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
+
+    if (!input.phone_number.trim()) {
+      newErrors.phone_number = "Phone number is required";
+    } else if (!/^\d{10}$/.test(input.phone_number.replace(/\D/g, ''))) {
+      newErrors.phone_number = "Phone number must be exactly 10 digits";
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -231,13 +237,25 @@ export function EmployerSignup() {
                   </div>
                   <input
                     type="tel"
-                    name="contact_number"
-                    value={input.contact_number}
-                    onChange={handleChange}
+                    name="phone_number"
+                    value={input.phone_number}
+                    onChange={(e) => {
+                      // Only allow numeric input
+                      const value = e.target.value.replace(/\D/g, '');
+                      // Limit to 10 digits
+                      if (value.length <= 10) {
+                        setInput({ ...input, phone_number: value });
+                      }
+                      if (errors.phone_number) {
+                        setErrors({ ...errors, phone_number: "" });
+                      }
+                    }}
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
-                      errors.contact_number ? 'border-red-500' : 'border-gray-600'
+                      errors.phone_number ? 'border-red-500' : 'border-gray-600'
                     } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
-                    placeholder="Enter contact number"
+                    placeholder="Enter 10-digit phone number"
+                    maxLength="10"
+                    pattern="\d{10}"
                     required
                   />
                 </div>

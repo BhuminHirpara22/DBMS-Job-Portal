@@ -191,6 +191,12 @@ const PostJob = () => {
                   <option value="Marketing">Marketing</option>
                   <option value="Finance">Finance</option>
                   <option value="Healthcare">Healthcare</option>
+                  <option value="Design">Design</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Remote">Remote</option>
+                  <option value="AI & Research">AI & Research</option>
+                  <option value="AI & ML">AI & ML</option>
+
                 </select>
               </div>
 

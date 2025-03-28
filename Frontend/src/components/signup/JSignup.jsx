@@ -27,6 +27,7 @@ export function JobSeekerSignup() {
     
     if (!input.first_name.trim()) newErrors.first_name = "First name is required";
     if (!input.last_name.trim()) newErrors.last_name = "Last name is required";
+    
     if (!input.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(input.email)) newErrors.email = "Invalid email format";
     
@@ -37,8 +38,17 @@ export function JobSeekerSignup() {
       newErrors.confirmPassword = "Passwords do not match";
     }
     
-    if (!input.phone_number.trim()) newErrors.phone_number = "Phone number is required";
+    if (!input.phone_number.trim()) {
+      newErrors.phone_number = "Phone number is required";
+    } else if (!/^\d{10}$/.test(input.phone_number.replace(/\D/g, ''))) {
+      newErrors.phone_number = "Phone number must be exactly 10 digits";
+    }
+    
     if (!input.location.trim()) newErrors.location = "Location is required";
+    
+    if (input.linkedin_url && !/^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/.*$/i.test(input.linkedin_url)) {
+      newErrors.linkedin_url = "Please enter a valid LinkedIn URL";
+    }
     
     if (input.education.length > 0 && !validateEducationFields(input.education)) {
       newErrors.education = "Please complete all education fields";
@@ -97,24 +107,44 @@ export function JobSeekerSignup() {
   };
 
   const validateEducationFields = (education) => {
-    return education.every(edu => 
-      edu.education_level && 
-      edu.institution_name && 
-      edu.field_of_study && 
-      edu.start_year && 
-      edu.end_year && 
-      edu.grade
-    );
+    for (let i = 0; i < education.length; i++) {
+      const edu = education[i];
+      if (!edu.education_level || 
+          !edu.institution_name || 
+          !edu.field_of_study || 
+          !edu.start_year || 
+          !edu.end_year || 
+          !edu.grade) {
+        return false;
+      }
+      
+      // Additional validation for years
+      if (edu.start_year && edu.end_year && parseInt(edu.start_year) > parseInt(edu.end_year)) {
+        setErrors(prev => ({...prev, education: "Start year cannot be greater than end year"}));
+        return false;
+      }
+    }
+    return true;
   };
 
   const validateExperienceFields = (experience) => {
-    return experience.every(exp => 
-      exp.job_title && 
-      exp.company_name && 
-      exp.location && 
-      exp.start_date && 
-      exp.end_date
-    );
+    for (let i = 0; i < experience.length; i++) {
+      const exp = experience[i];
+      if (!exp.job_title || 
+          !exp.company_name || 
+          !exp.location || 
+          !exp.start_date || 
+          !exp.end_date) {
+        return false;
+      }
+      
+      // Additional validation for dates
+      if (exp.start_date && exp.end_date && new Date(exp.start_date) > new Date(exp.end_date)) {
+        setErrors(prev => ({...prev, experience: "Start date cannot be after end date"}));
+        return false;
+      }
+    }
+    return true;
   };
 
   const validateSkillsFields = (skills) => {
@@ -311,11 +341,23 @@ export function JobSeekerSignup() {
                     type="tel"
                     name="phone_number"
                     value={input.phone_number}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      // Only allow numeric input
+                      const value = e.target.value.replace(/\D/g, '');
+                      // Limit to 10 digits
+                      if (value.length <= 10) {
+                        setInput({ ...input, phone_number: value });
+                      }
+                      if (errors.phone_number) {
+                        setErrors({ ...errors, phone_number: "" });
+                      }
+                    }}
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
                       errors.phone_number ? 'border-red-500' : 'border-gray-600'
                     } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
-                    placeholder="Enter your phone number"
+                    placeholder="Enter 10-digit phone number"
+                    maxLength="10"
+                    pattern="\d{10}"
                     required
                   />
                 </div>
@@ -337,10 +379,15 @@ export function JobSeekerSignup() {
                     name="linkedin_url"
                     value={input.linkedin_url}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
+                      errors.linkedin_url ? 'border-red-500' : 'border-gray-600'
+                    } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
                     placeholder="Enter your LinkedIn profile URL"
                   />
                 </div>
+                {errors.linkedin_url && (
+                  <p className="mt-1 text-sm text-red-400">{errors.linkedin_url}</p>
+                )}
               </div>
 
               <div>

@@ -128,7 +128,7 @@ const router = createBrowserRouter([
         path: "/schedule",
         // element: <ProtectedRoute component={Schedule} />,
         element: <Schedule />,
-      }
+      },
     ],
   },
   {

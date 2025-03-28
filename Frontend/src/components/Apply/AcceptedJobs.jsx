@@ -19,7 +19,11 @@ const AcceptedJobs = () => {
             try {
                 const endpoint = status === "accepted" ? "get_accepted_application" : "get_rejected_application";
                 const response = await axios.get(`${apiUrl}/application/${endpoint}/${seekerId}`);
-                setJobs(Array.isArray(response.data) ? response.data : []);
+                
+                // Extract applications from the nested structure
+                const applicationsData = response.data.applications || [];
+                setJobs(Array.isArray(applicationsData) ? applicationsData : []);
+
             } catch (err) {
                 console.error("Error fetching jobs:", err);
                 setError("Failed to fetch jobs. Please try again.");
@@ -134,14 +138,23 @@ const AcceptedJobs = () => {
                                 >
                                     <div className="relative z-10">
                                         <h3 className="text-xl font-bold text-white mb-2">
-                                            {job.jobTitle || "Untitled Job"}
+                                            {job.job_title || "Untitled Job"}
                                         </h3>
                                         <p className="text-gray-400 mb-4">
-                                            <strong>Company:</strong> {job.companyName}
+                                            <strong>Company:</strong> {job.company}
+                                        </p>
+                                        <p className="text-gray-400 mb-2">
+                                            <strong>Location:</strong> {job.location}
+                                        </p>
+                                        <p className="text-gray-400 mb-2">
+                                            <strong>Salary:</strong> ₹{job.min_salary} - ₹{job.max_salary}
+                                        </p>
+                                        <p className="text-gray-400 mb-2">
+                                            <strong>Applied:</strong> {new Date(job.applied_date).toLocaleDateString()}
                                         </p>
                                         <p className="text-gray-400">
                                             <strong>Status:</strong>{" "}
-                                            {status === "accepted" ? (
+                                            {job.application_status === "Accepted" ? (
                                                 <span className="text-green-400">Accepted</span>
                                             ) : (
                                                 <span className="text-red-400">Rejected</span>

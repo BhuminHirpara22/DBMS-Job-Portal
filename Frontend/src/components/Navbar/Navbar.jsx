@@ -40,7 +40,6 @@ const Navbar = () => {
   const employerNavItems = [
     { to: "/employer/dashboard", label: "Dashboard", icon: <FaChartBar /> },
     { to: "/employer/jobs", label: "My Jobs", icon: <FaBriefcase /> },
-    { to: "/employer/applications", label: "Applications", icon: <FaFileAlt /> },
     { to: "/employer/profile", label: "Profile", icon: <FaUser /> },
     // { to: "/logout", label: "Logout", icon: <FaSignOutAlt /> },
   ];

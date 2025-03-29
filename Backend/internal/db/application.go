@@ -4,7 +4,6 @@ import (
 	"Backend/config"
 	"Backend/internal/schema"
 	"context"
-	"errors"
 	"time"
 	"fmt"
 )
@@ -73,11 +72,6 @@ func GetSeekerApplications(ctx context.Context, jobSeekerID int) ([]schema.Appli
 			return nil, err
 		}
 		applications = append(applications, application)
-	}
-
-	// Check if no records were found
-	if len(applications) == 0 {
-		return nil, errors.New("no applications found")
 	}
 
 	return applications, nil

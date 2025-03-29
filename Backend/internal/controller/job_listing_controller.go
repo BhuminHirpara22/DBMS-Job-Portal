@@ -3,13 +3,16 @@ package controller
 import (
 	"Backend/internal/db"
 	"Backend/internal/schema"
+	"Backend/internal/helpers"
 
 	// "fmt"
+	"context"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -250,9 +253,6 @@ func ApplyJob(c *gin.Context) {
 		return
 	}
 
-	//  Log received application data
-	log.Printf("[INFO] Received job application: JobSeekerID=%d, JobListingID=%d\n", application.JobSeekerID, application.JobListingID)
-
 	// Validate job_seeker_id & job_listing_id
 	if application.JobSeekerID <= 0 || application.JobListingID <= 0 {
 		log.Println("[ERROR] Invalid job_seeker_id or job_listing_id")
@@ -284,8 +284,37 @@ func ApplyJob(c *gin.Context) {
 		return
 	}
 
-	//  Log successful application
-	log.Printf("[SUCCESS] JobSeekerID=%d successfully applied for JobListingID=%d (ApplicationID=%d)\n", application.JobSeekerID, application.JobListingID, applicationID)
+	// Create a notification for the job seeker
+	message := fmt.Sprintf("Your application %d has been created successfully.", applicationID)
+	notificationID, err := db.GenerateNotificationID(context.Background())
+	notification := schema.Notification{
+		ID:       notificationID,
+		UserID:   application.JobSeekerID,
+		UserType: "job_seeker",
+		Message:  message,
+		IsRead:   false,
+	}
+
+	err = db.StoreNotification(context.Background(), notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
+		return
+	}
+
+	// Send mail notification in a goroutine
+	go func() {
+		jobseeker, err := db.GetJobSeeker(c, application.JobSeekerID)
+		if err != nil {
+			fmt.Println("Failed to fetch job seeker:", err)
+			return
+		}
+
+		err = helpers.SendMail(jobseeker.Email, message)
+		if err != nil {
+			fmt.Println("Failed to send email:", err)
+		}
+	}()
+
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,

@@ -36,6 +36,7 @@ func RegisterJobSeeker(c *gin.Context) {
 	// Hash the provided password for security.
 	hashedPassword, err := helpers.HashPassword(newJobSeeker.Password)
 	if err != nil {
+		fmt.Println(err)
 		// fmt.Printf("Error hashing password: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -49,6 +50,7 @@ func RegisterJobSeeker(c *gin.Context) {
 	// Insert the new job seeker into the database.
 	id, err := db.RegisterJobSeeker(context.Background(), newJobSeeker)
 	if err != nil {
+		fmt.Println(err)
 		// fmt.Printf("Error registering job seeker: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

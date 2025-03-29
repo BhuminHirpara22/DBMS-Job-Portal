@@ -3,6 +3,7 @@ package controller
 import (
 	"Backend/internal/db"
 	"Backend/internal/schema"
+	"Backend/internal/helpers"
 	"context"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ScheduleInterviewHandler schedules an interview and sends an email notification
 func ScheduleInterviewHandler(c *gin.Context) {
 	var interview schema.Interview
 	if err := c.ShouldBindJSON(&interview); err != nil {
@@ -28,20 +30,32 @@ func ScheduleInterviewHandler(c *gin.Context) {
 	// Step 2: Assign the generated ID to the application struct
 	// interview.ID = newID
 
+	// Step 2: Schedule the interview
 	result, err := db.ScheduleInterview(context.Background(), interview)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to schedule interview"})
 		return
 	}
 
+	// Step 3: Fetch the application details
 	application, err := db.GetApplication(context.Background(), interview.ApplicationID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch application details"})
+		return
+	}
 
-	// Create a notification for the job seeker
-	message := fmt.Sprintf("Your interview for application %d has been scheduled",application.ID)
+	// Step 4: Create a notification for the job seeker
+	message := fmt.Sprintf("Your interview for application %d has been scheduled.", application.ID)
+
 	notificationID, err := db.GenerateNotificationID(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate notification ID"})
+		return
+	}
+
 	notification := schema.Notification{
-		ID: 		notificationID,
-		UserID:  	application.JobSeekerID,
+		ID:       notificationID,
+		UserID:   application.JobSeekerID,
 		UserType: "job_seeker",
 		Message:  message,
 		IsRead:   false,
@@ -52,7 +66,38 @@ func ScheduleInterviewHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Interview scheduled successfully", "interview": result})
+
+	// Step 5: Send email notification in a goroutine
+	go func() {
+		// Fetch job seeker details
+		jobseeker, err := db.GetJobSeeker(context.Background(), application.JobSeekerID)
+		if err != nil {
+			fmt.Println("Failed to fetch job seeker details:", err)
+			return
+		}
+
+		// Prepare email content
+		emailMessage := fmt.Sprintf(`
+Your interview for application <strong>#%d</strong> has been scheduled.<br>
+📅 <strong>Date:</strong> %s<br>
+⏰ <strong>Mode:</strong> %s<br>
+We look forward to meeting you!
+`, application.ID, interview.ScheduledDate,interview.InterviewMode)
+
+		// Send the email
+		err = helpers.SendMail(jobseeker.Email, emailMessage)
+		if err != nil {
+			fmt.Println("Failed to send email:", err)
+		} else {
+			fmt.Println("Email sent successfully to:", jobseeker.Email)
+		}
+	}()
+
+	// Step 6: Return success response
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Interview scheduled successfully",
+		"interview": result,
+	})
 }
 
 func GetSeekerInterviewHandler(c *gin.Context) {

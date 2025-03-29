@@ -3,6 +3,7 @@ package controller
 import (
 	"Backend/internal/db"
 	"Backend/internal/schema"
+	"Backend/internal/helpers"
 	"context"
 	"net/http"
 	"strconv"
@@ -36,7 +37,7 @@ func CreateApplicationHandler(c *gin.Context) {
 	}
 
 	// Create a notification for the job seeker
-	message := fmt.Sprintf("Your application %d has been created Succesfully.",application.ID)
+	message := fmt.Sprintf("Your application %d has been created successfully.", application.ID)
 	notificationID, err := db.GenerateNotificationID(context.Background())
 	notification := schema.Notification{
 		ID:       notificationID,
@@ -51,6 +52,20 @@ func CreateApplicationHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
 		return
 	}
+
+	// Send mail notification in a goroutine
+	go func() {
+		jobseeker, err := db.GetJobSeeker(c, application.JobSeekerID)
+		if err != nil {
+			fmt.Println("Failed to fetch job seeker:", err)
+			return
+		}
+
+		err = helpers.SendMail(jobseeker.Email, message)
+		if err != nil {
+			fmt.Println("Failed to send email:", err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Application created successfully", "application": result})
 }
@@ -163,10 +178,10 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 	}
 
 	// Create a notification for the job seeker
-	message := fmt.Sprintf("Your application %d has been %s",applicationID, requestBody.Status)
+	message := fmt.Sprintf("Your application %d has been %s.", applicationID, requestBody.Status)
 	notificationID, err := db.GenerateNotificationID(context.Background())
 	notification := schema.Notification{
-		ID: 	  notificationID,
+		ID:       notificationID,
 		UserID:   updatedApplication.JobSeekerID,
 		UserType: "job_seeker",
 		Message:  message,
@@ -178,6 +193,20 @@ func UpdateApplicationStatusHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store notification"})
 		return
 	}
+
+	// Send mail notification in a goroutine
+	go func() {
+		jobseeker, err := db.GetJobSeeker(c, updatedApplication.JobSeekerID)
+		if err != nil {
+			fmt.Println("Failed to fetch job seeker:", err)
+			return
+		}
+
+		err = helpers.SendMail(jobseeker.Email, message)
+		if err != nil {
+			fmt.Println("Failed to send email:", err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Application status updated successfully",
